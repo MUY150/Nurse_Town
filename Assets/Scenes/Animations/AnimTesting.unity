@@ -579,8 +579,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 200, y: 50}
+  m_AnchoredPosition: {x: 0, y: -175}
+  m_SizeDelta: {x: 650, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1149797311
 MonoBehaviour:
@@ -636,7 +636,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -2433,7 +2433,7 @@ PrefabInstance:
       objectReference: {fileID: 1601890072}
     - target: {fileID: 5538567356164335875, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: setEmotionCode
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5538567356164335875, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: animatorController
@@ -2441,7 +2441,7 @@ PrefabInstance:
       objectReference: {fileID: 9100000, guid: 4b65e50bcbf52ff4d9b2ea8a33b8db90, type: 2}
     - target: {fileID: 5538567356164335875, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: currentEmotionCode
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5832381736506498011, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: m_LocalRotation.w
