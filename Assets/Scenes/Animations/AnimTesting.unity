@@ -2433,7 +2433,7 @@ PrefabInstance:
       objectReference: {fileID: 1601890072}
     - target: {fileID: 5538567356164335875, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: setEmotionCode
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5538567356164335875, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: animatorController
