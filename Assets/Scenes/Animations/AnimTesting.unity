@@ -2441,7 +2441,7 @@ PrefabInstance:
       objectReference: {fileID: 9100000, guid: 4b65e50bcbf52ff4d9b2ea8a33b8db90, type: 2}
     - target: {fileID: 5538567356164335875, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: currentEmotionCode
-      value: 3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5832381736506498011, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
       propertyPath: m_LocalRotation.w
