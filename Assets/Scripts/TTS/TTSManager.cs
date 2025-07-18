@@ -210,10 +210,6 @@ public class TTSManager : MonoBehaviour
 
             string jsonContent = JsonConvert.SerializeObject(requestBody);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            
-            Debug.Log("POST endpoint: " + endpoint);
-            Debug.Log("Request body:\n" + jsonContent);
-            Debug.Log("Content-Type: " + content.Headers.ContentType);
 
             HttpResponseMessage response = await client.PostAsync(endpoint, content);
 
