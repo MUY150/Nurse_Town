@@ -720,6 +720,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Humano_Aphasia
       objectReference: {fileID: 0}
+    - target: {fileID: 1511817591303542841, guid: 21926d08627784b40a21266f938fe7a1, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -9143450767860132912, guid: 2714860fbd996284e8096e7f4c0be606, type: 3}
     - target: {fileID: 2015902974179722613, guid: 21926d08627784b40a21266f938fe7a1, type: 3}
       propertyPath: m_SceneBindings.Array.data[1].value
       value: 
@@ -776,6 +780,10 @@ PrefabInstance:
       propertyPath: onLipSyncUpdate.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
       value: OnLipSyncUpdate
       objectReference: {fileID: 0}
+    - target: {fileID: 5134390860619196821, guid: 21926d08627784b40a21266f938fe7a1, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -3014937882001165872, guid: 2714860fbd996284e8096e7f4c0be606, type: 3}
     - target: {fileID: 5425208361766372225, guid: 21926d08627784b40a21266f938fe7a1, type: 3}
       propertyPath: m_IsActive
       value: 0

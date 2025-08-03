@@ -12,16 +12,18 @@ using Xceed.Document.NET;
 public class EmotionController : MonoBehaviour
 {
     public PlayableDirector director;
-    public bool setEmotionCode = true;
-    public int currentEmotionCode;
-    private int previousEmotionCode = 0;
     public Animator animator;
-    public List<TrackAsset> allTracks = new();
-
+    
+    [Header("Debug Settings")]
+    public bool setEmotionCode = true;
+    public bool disableMotion = false;
+    public int currentEmotionCode;
     public string[] emotionNames = {"Neutral", "Discomfort", "Happy", "Pain", "Sad", "Anger"};
     
+    private List<TrackAsset> allTracks = new();
     private List<TTSManager.WordTiming> charTimings;
     private List<TTSManager.WordTiming> wordTimings;
+    private int previousEmotionCode = 0;
 
     void Start()
     {
@@ -137,7 +139,10 @@ public class EmotionController : MonoBehaviour
     
     public void HandleEmotionCode(int emotionCode)
     {
-        animator.ResetTrigger(emotionNames[previousEmotionCode]);
+        if (!disableMotion)
+        {
+            animator.ResetTrigger(emotionNames[previousEmotionCode]);
+        }
 
         previousEmotionCode = emotionCode;
         if (!setEmotionCode) { currentEmotionCode = emotionCode;}
@@ -158,7 +163,10 @@ public class EmotionController : MonoBehaviour
             track.muted = (track != selectedTrack);
         }
         
-        animator.SetTrigger(emotionNames[currentEmotionCode]);
+        if (!disableMotion)
+        {
+            animator.SetTrigger(emotionNames[currentEmotionCode]);
+        }
         Debug.Log("Set trigger: " + emotionNames[currentEmotionCode]);
     }
 
