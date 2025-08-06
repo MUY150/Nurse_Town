@@ -97,7 +97,7 @@ public class EmotionController : MonoBehaviour
         foreach (var wordTiming in wordTimings)
         {
             float delay = wordTiming.EndTime - wordTiming.StartTime;
-            Debug.Log($"Triggering animation for word: {wordTiming.Word} after delay: {delay}");
+            //Debug.Log($"Triggering animation for word: {wordTiming.Word} after delay: {delay}");
             yield return new WaitForSeconds(delay);
             
             int emotionCode = MapWordToEmotion(wordTiming.Word);
@@ -142,6 +142,7 @@ public class EmotionController : MonoBehaviour
         if (!disableMotion)
         {
             animator.ResetTrigger(emotionNames[previousEmotionCode]);
+            Debug.Log("Reset trigger: " + emotionNames[previousEmotionCode]);
         }
 
         previousEmotionCode = emotionCode;
@@ -166,8 +167,9 @@ public class EmotionController : MonoBehaviour
         if (!disableMotion)
         {
             animator.SetTrigger(emotionNames[currentEmotionCode]);
+            Debug.Log("Set trigger: " + emotionNames[currentEmotionCode]);
         }
-        Debug.Log("Set trigger: " + emotionNames[currentEmotionCode]);
+        
     }
 
     public void PlayEmotion()
