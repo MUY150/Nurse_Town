@@ -41,6 +41,7 @@ namespace UI.Menu
         private void Credits()
         {
             Menu.CanvasTransition(_mainMenuCanvas, _creditsCanvas);
+            //credits.SetActive(true);
         }
 
         private void Quit()

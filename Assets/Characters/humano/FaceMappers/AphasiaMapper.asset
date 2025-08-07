@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7542b0a8b93c044618b3d84f58b4bc3c, type: 3}
   m_Name: AphasiaMapper
   m_EditorClassIdentifier: 
-  m_RigPrefab: {fileID: 233326578489677490, guid: 6c9bf655af009ad468fc993bacf0ee00, type: 3}
+  m_RigPrefab: {fileID: 8068719081323617958, guid: 2cfa25961a6763346a3f984614e109d1, type: 3}
   m_ShapeMatchTolerance: 0.6
   m_DefaultEvaluator: {fileID: 11400000, guid: 23f316e41ee3e46af9c5d6fdc69047b1, type: 2}
   m_InvertMappings: 0
   m_Maps:
-  - m_Path: Head
+  - m_Path: Head.001
     m_Bindings:
     - m_Location: 0
       m_ShapeIndex: 1

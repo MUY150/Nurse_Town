@@ -18,7 +18,7 @@ public class EmotionController : MonoBehaviour
     public bool setEmotionCode = true;
     public bool disableMotion = false;
     public int currentEmotionCode;
-    public string[] emotionNames = {"Neutral", "Discomfort", "Happy", "Pain", "Sad", "Anger"};
+    public string[] emotionNames = {"Neutral", "Discomfort", "Happy", "Pain", "Sad", "Anger", "Frustrated", "Thinking"};
     
     private List<TrackAsset> allTracks = new();
     private List<TTSManager.WordTiming> charTimings;
