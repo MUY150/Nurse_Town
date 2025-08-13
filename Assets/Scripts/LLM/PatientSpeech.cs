@@ -102,7 +102,9 @@ public class OpenAIRequest : MonoBehaviour
             - Use [4] for sad
             - Use [5] for anger
             - Use [6] for frustration due to speech block or not being understood
-            - Use [7] for thinking or processing information";
+            - Use [7] for thinking or processing information
+            - Use [8] for an apologetic grimace
+            - Use [9] for crying in frustration when unable to communicate";
 
         // Randomly select a patient instruction
         System.Random rand = new System.Random();
