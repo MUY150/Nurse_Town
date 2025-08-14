@@ -22,8 +22,8 @@ namespace UI.Menu
         
         public void Back()
         {
-            //Menu.CanvasTransition(_creditsCanvas, _mainMenuCanvas);
-            credits.SetActive(false);
+            Menu.CanvasTransition(_creditsCanvas, _mainMenuCanvas);
+            //credits.SetActive(false);
         }
         
     }
