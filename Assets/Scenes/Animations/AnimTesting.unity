@@ -1800,7 +1800,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 5538567356164335875, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
   m_PrefabInstance: {fileID: 3246753504023554014}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
+  m_GameObject: {fileID: 359320513}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a150137ffaacba4c9ede0797f2e1000, type: 3}
@@ -2039,6 +2039,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 744879728802237979, guid: 1c25f37d89f4a7b4fa4c762375d67528, type: 3}
   m_PrefabInstance: {fileID: 412894618}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &359320513 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1068050644127363385, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
+  m_PrefabInstance: {fileID: 3246753504023554014}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &383688766
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2271,7 +2276,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1120805673}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.18859994
+  m_Size: 0.09429997
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -3522,11 +3527,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c429ac217b364750aad5bbe98d6bd92, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  apiUrl: https://api.openai.com/v1/chat/completions
-  apiKey: 
-  currentScenario: brocaAphasia
-  lostResponse: I......I.........no.........fast......
-  maxSpeechSpeed: 170
 --- !u!114 &553954846
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4673,7 +4673,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.5002, y: 471.50037}
+  m_AnchoredPosition: {x: -331.50024, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -5974,7 +5974,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
   m_Value: -0.0000035902904
-  m_Size: 0.9749999
+  m_Size: 0.48751095
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -8830,6 +8830,23 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 6014986244807406073, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
   m_PrefabInstance: {fileID: 3246753504023554014}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1601890074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 359320513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a66d412a206a6be4580f4a134fa450c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  apiUrl: https://api.openai.com/v1/chat/completions
+  apiKey: 
+  currentScenario: brocaAphasia
+  lostResponse: I......I.........no.........fast......
+  maxSpeechSpeed: 170
 --- !u!4 &1606803519 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 70464898372786552, guid: b56d90b7c2d52cf46a53bb26c84ffb3a, type: 3}
@@ -12777,10 +12794,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4234072520062330784, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 1068050644127363385, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1601890074}
   m_SourcePrefab: {fileID: 100100000, guid: 42bd9945d4cad1544b189a9122d9b1ef, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

@@ -24,22 +24,22 @@ public class TTSManager : MonoBehaviour
     [Header("TTS Configuration")]
     [Tooltip("API key for ElevenLabs (loaded from environment variable by default)")]
     [SerializeField] private string elevenLabsApiKey;
-    
+
     [Tooltip("Voice ID for ElevenLabs")]
     public string voiceId = "Bz0vsNJm8uY1hbd4c4AE";
-    
+
     [Tooltip("Model ID for ElevenLabs")]
     public string modelId = "eleven_multilingual_v2";
-    
+
     [Header("Voice Settings")]
     [Range(0f, 1f)]
     [Tooltip("Stability value (0-1)")]
     public float stability = 0.4f;
-    
+
     [Range(0f, 1f)]
     [Tooltip("Similarity boost value (0-1)")]
     public float similarityBoost = 0.75f;
-    
+
     [Range(0f, 1f)]
     [Tooltip("Style exaggeration value (0-1)")]
     public float styleExaggeration = 0.3f;
@@ -48,28 +48,28 @@ public class TTSManager : MonoBehaviour
     [Tooltip("Speed value (0.7 - 1.2)")]
     public float speed = 1.0f;
 
-    
+
     [Header("Audio2Face Integration")]
     [Tooltip("Whether to use Audio2Face for facial animation")]
     public bool useAudio2Face = true;
-    
+
     [Tooltip("Whether to delete cached audio files after use")]
     public bool deleteCachedFiles = true;
-    
+
     [Header("Blood Effect Configuration")]
     [Tooltip("Reference to the BloodEffectController for blood effects")]
     public bool useBloodEffectController = true;
 
     // API endpoints
     private static readonly string ttsEndpoint = "https://api.elevenlabs.io/v1/text-to-speech";
-    
+
     // Component references
     private CharacterAnimationController animationController;
-    private BloodEffectController bloodEffectController;  
+    private BloodEffectController bloodEffectController;
     private BloodTextController bloodTextController;
     private Audio2FaceManager audio2FaceManager;
     public EmotionController emotionController;
-    
+
     void Awake()
     {
         if (Instance == null)
@@ -86,16 +86,12 @@ public class TTSManager : MonoBehaviour
 
     void Start()
     {
-        // Load the API key from environment variables if not set manually
-        if (string.IsNullOrEmpty(elevenLabsApiKey))
-        {
-            elevenLabsApiKey = EnvironmentLoader.GetEnvVariable("ELEVENLABS_API_KEY");
-            Debug.Log("TTS Manager: API key loaded from environment variable");
-        }
-        
+        // 修复API密钥加载逻辑
+        LoadElevenLabsApiKey();
+
         // Get references to required components
         animationController = GetComponent<CharacterAnimationController>();
-        
+
         // Find the Audio2FaceManager if we're using it
         if (useAudio2Face)
         {
@@ -109,11 +105,11 @@ public class TTSManager : MonoBehaviour
             {
                 Debug.Log("Audio2Face integration enabled");
             }
-            
+
         }
 
         if (!useBloodEffectController) return;
-        
+
         // Find the blood effect in the UI
         bloodEffectController = FindObjectOfType<BloodEffectController>();
         if (bloodEffectController == null)
@@ -126,11 +122,59 @@ public class TTSManager : MonoBehaviour
         {
             Debug.LogError("BloodTextController not found in the scene. Make sure it exists in the UI!");
         }
-        
+
         if (emotionController == null)
         {
             Debug.LogError("EmotionController not found in the scene. Make sure it exists!");
         }
+    }
+
+    // 新的API密钥加载方法
+    private void LoadElevenLabsApiKey()
+    {
+        Debug.Log("=== ELEVENLABS API KEY LOADING ===");
+
+        // 方法1: 从环境变量加载
+        elevenLabsApiKey = EnvironmentLoader.GetEnvVariable("ELEVENLABS_API_KEY");
+
+        if (!string.IsNullOrEmpty(elevenLabsApiKey))
+        {
+            Debug.Log("✓ ElevenLabs API key loaded from environment variables");
+            return;
+        }
+
+        // 方法2: 从StreamingAssets配置文件加载
+        string configPath = Path.Combine(Application.streamingAssetsPath, "config.json");
+        Debug.Log($"Looking for ElevenLabs config file at: {configPath}");
+
+        if (File.Exists(configPath))
+        {
+            try
+            {
+                string configContent = File.ReadAllText(configPath);
+                var config = JsonConvert.DeserializeObject<Dictionary<string, string>>(configContent);
+
+                if (config != null && config.ContainsKey("ELEVENLABS_API_KEY"))
+                {
+                    elevenLabsApiKey = config["ELEVENLABS_API_KEY"];
+                    Debug.Log("✓ ElevenLabs API key loaded from config file");
+                    return;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error reading config file for ElevenLabs: {e.Message}");
+            }
+        }
+
+        // 方法3: 检查是否直接在Inspector中设置了
+        if (!string.IsNullOrEmpty(elevenLabsApiKey))
+        {
+            Debug.Log("✓ ElevenLabs API key found in Inspector");
+            return;
+        }
+
+        Debug.LogError("✗ No ElevenLabs API key found! Please set it via environment variable, config file, or Inspector");
     }
 
     // Public method to be called to convert text to speech
@@ -142,7 +186,14 @@ public class TTSManager : MonoBehaviour
             return;
         }
 
-        //text = "With tenure, Suzie’d have all the more leisure for yachting, but her publications are no good.";
+        // 检查API密钥
+        if (string.IsNullOrEmpty(elevenLabsApiKey))
+        {
+            Debug.LogError("TTS Manager: ElevenLabs API key not available. Cannot process TTS request.");
+            return;
+        }
+
+        //text = "With tenure, Suzie'd have all the more leisure for yachting, but her publications are no good.";
 
         // Strip emotion code for TTS but keep original text for animation
         string ttsText = text;
@@ -151,6 +202,8 @@ public class TTSManager : MonoBehaviour
         {
             ttsText = text.Substring(0, text.Length - 3).Trim();
         }
+
+        Debug.Log($"TTS Manager: Processing text: '{ttsText}'");
 
         // Get audio data from ElevenLabs TTS service
         (byte[] audioData, List<WordTiming> wordTimings) = await GetElevenLabsTTSAudio(
@@ -162,7 +215,7 @@ public class TTSManager : MonoBehaviour
             styleExaggeration,
             speed
         );
-        
+
         //Debug.LogWarning("Word Timings List: " + (wordTimings != null ? string.Join(", ", wordTimings.Select(w => $"{w.Word} ({w.StartTime}-{w.EndTime})")) : "null"));
 
         if (audioData != null && wordTimings != null)
@@ -177,82 +230,94 @@ public class TTSManager : MonoBehaviour
 
     // Method to get TTS audio from ElevenLabs
     private async Task<(byte[] audioData, List<WordTiming> wordTimings)> GetElevenLabsTTSAudio(
-    string inputText,
-    string voiceId,
-    string modelId,
-    float stability = 0.4f,
-    float similarityBoost = 0.75f,
-    float styleExaggeration = 0.3f,
-    float speed = 1.0f)
-{
-    
-    string endpoint = $"{ttsEndpoint}/{voiceId}/with-timestamps?output_format=pcm_16000";
-
-    using (HttpClient client = new HttpClient())
+        string inputText,
+        string voiceId,
+        string modelId,
+        float stability = 0.4f,
+        float similarityBoost = 0.75f,
+        float styleExaggeration = 0.3f,
+        float speed = 1.0f)
     {
-        try
-        {
-            client.DefaultRequestHeaders.Clear();
-            client.DefaultRequestHeaders.Add("xi-api-key", elevenLabsApiKey.Trim());
 
-            var requestBody = new
+        string endpoint = $"{ttsEndpoint}/{voiceId}/with-timestamps?output_format=pcm_16000";
+
+        using (HttpClient client = new HttpClient())
+        {
+            try
             {
-                text = inputText,
-                model_id = modelId,
-                voice_settings = new
+                // 清理和验证API密钥
+                if (string.IsNullOrEmpty(elevenLabsApiKey))
                 {
-                    stability,
-                    similarity_boost = similarityBoost,
-                    style_exaggeration = styleExaggeration,
-                    speed
+                    Debug.LogError("ElevenLabs API key is null or empty");
+                    return (null, null);
                 }
-            };
 
-            string jsonContent = JsonConvert.SerializeObject(requestBody);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            
-            Debug.Log("POST endpoint: " + endpoint);
-            Debug.Log("Request body:\n" + jsonContent);
-            Debug.Log("Content-Type: " + content.Headers.ContentType);
+                client.DefaultRequestHeaders.Clear();
+                client.DefaultRequestHeaders.Add("xi-api-key", elevenLabsApiKey.Trim());
 
-            HttpResponseMessage response = await client.PostAsync(endpoint, content);
-
-            if (!response.IsSuccessStatusCode)
-            {
-                string error = await response.Content.ReadAsStringAsync();
-                Debug.LogError($"TTS API Error: {response.StatusCode} — {error}");
-                return (null, null);
-            }
-            
-            string jsonResponse = await response.Content.ReadAsStringAsync();
-            Debug.Log("JSON response preview: " + jsonResponse.Substring(0, Math.Min(jsonResponse.Length, 500)));
-
-            var parsed = JsonConvert.DeserializeObject<ElevenLabsResponse>(jsonResponse);
-
-            if (parsed?.AudioBase64 == null || parsed.Alignment == null)
-            {
-                Debug.LogError("TTS response missing audio data or word timings.");
-                return (null, null);
-            }
-
-            byte[] audioBytes = Convert.FromBase64String(parsed.AudioBase64);
-            return (audioBytes, parsed.Alignment.Characters
-                .Select((word, index) => new WordTiming
+                var requestBody = new
                 {
-                    Word = word,
-                    StartTime = parsed.Alignment.CharacterStartTimesSeconds[index],
-                    EndTime = parsed.Alignment.CharacterEndTimesSeconds[index]
-                })
-                .ToList());
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Exception in GetElevenLabsTTSAudio: {ex.Message}");
-            return (null, null);
+                    text = inputText,
+                    model_id = modelId,
+                    voice_settings = new
+                    {
+                        stability,
+                        similarity_boost = similarityBoost,
+                        style_exaggeration = styleExaggeration,
+                        speed
+                    }
+                };
+
+                string jsonContent = JsonConvert.SerializeObject(requestBody);
+                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+                Debug.Log("=== ELEVENLABS TTS REQUEST ===");
+                Debug.Log("POST endpoint: " + endpoint);
+                Debug.Log($"API Key preview: {elevenLabsApiKey.Substring(0, Math.Min(10, elevenLabsApiKey.Length))}...");
+                Debug.Log("Request body:\n" + jsonContent);
+
+                HttpResponseMessage response = await client.PostAsync(endpoint, content);
+
+                Debug.Log($"Response Status: {response.StatusCode}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    Debug.LogError($"TTS API Error: {response.StatusCode} — {error}");
+                    return (null, null);
+                }
+
+                string jsonResponse = await response.Content.ReadAsStringAsync();
+                Debug.Log("JSON response preview: " + jsonResponse.Substring(0, Math.Min(jsonResponse.Length, 500)));
+
+                var parsed = JsonConvert.DeserializeObject<ElevenLabsResponse>(jsonResponse);
+
+                if (parsed?.AudioBase64 == null || parsed.Alignment == null)
+                {
+                    Debug.LogError("TTS response missing audio data or word timings.");
+                    return (null, null);
+                }
+
+                byte[] audioBytes = Convert.FromBase64String(parsed.AudioBase64);
+                Debug.Log($"✓ ElevenLabs TTS success: {audioBytes.Length} bytes of audio data received");
+
+                return (audioBytes, parsed.Alignment.Characters
+                    .Select((word, index) => new WordTiming
+                    {
+                        Word = word,
+                        StartTime = parsed.Alignment.CharacterStartTimesSeconds[index],
+                        EndTime = parsed.Alignment.CharacterEndTimesSeconds[index]
+                    })
+                    .ToList());
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Exception in GetElevenLabsTTSAudio: {ex.Message}");
+                Debug.LogError($"Stack Trace: {ex.StackTrace}");
+                return (null, null);
+            }
         }
     }
-}
-
 
     private void AddWavHeaderAndSave(byte[] pcmData, string filePath, int sampleRate = 16000, int channels = 1)
     {
@@ -262,12 +327,12 @@ public class TTSManager : MonoBehaviour
             // Calculate sizes
             int dataSize = pcmData.Length;
             int fileSize = dataSize + 36; // 36 = size of WAV header minus 8 bytes
-        
+
             // RIFF header
             writer.Write(Encoding.ASCII.GetBytes("RIFF"));
             writer.Write(fileSize);
             writer.Write(Encoding.ASCII.GetBytes("WAVE"));
-        
+
             // Format chunk
             writer.Write(Encoding.ASCII.GetBytes("fmt "));
             writer.Write(16); // Chunk size
@@ -277,18 +342,18 @@ public class TTSManager : MonoBehaviour
             writer.Write(sampleRate * channels * 2); // Byte rate (SampleRate * NumChannels * BitsPerSample/8)
             writer.Write((short)(channels * 2)); // Block align (NumChannels * BitsPerSample/8)
             writer.Write((short)16); // Bits per sample
-        
+
             // Data chunk
             writer.Write(Encoding.ASCII.GetBytes("data"));
             writer.Write(dataSize);
-        
+
             // Write the PCM data
             writer.Write(pcmData);
         }
-    
+
         Debug.Log($"Saved WAV file with PCM data to: {filePath}");
     }
-    
+
 
     // Method to process and play the audio bytes received
     private void ProcessAudioBytes(byte[] audioData, List<WordTiming> wordTimings, string messageContent)
@@ -320,7 +385,7 @@ public class TTSManager : MonoBehaviour
             AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
             audioSource.clip = audioClip;
             audioSource.Play();
-            
+
             // If the file is successfully loaded, play emotion animation
             if (emotionController == null)
             {
@@ -331,14 +396,14 @@ public class TTSManager : MonoBehaviour
                 emotionController.SyncAnimationsWithWordTimings(wordTimings);
                 emotionController.PlayEmotion();
             }
-            
+
             // Update animation based on emotion code
             UpdateAnimation(messageContent);
-            
+
             float waitTime = audioClip.length + 0.5f;
             Debug.Log($"Audio playing, will wait {waitTime} seconds for completion");
             yield return new WaitForSeconds(waitTime);
-        
+
             Debug.Log("Audio playback completed");
         }
         else
@@ -371,7 +436,7 @@ public class TTSManager : MonoBehaviour
         public string model_id { get; set; }
         public VoiceSettings voice_settings { get; set; }
     }
-    
+
     [Serializable]
     public class ElevenLabsResponse
     {
@@ -384,7 +449,7 @@ public class TTSManager : MonoBehaviour
         [JsonProperty("normalized_alignment")]
         public Alignment NormalizedAlignment { get; set; }
     }
-    
+
     [Serializable]
     public class Alignment
     {
@@ -427,12 +492,12 @@ public class TTSManager : MonoBehaviour
             Debug.LogWarning("Cannot update animation: animationController is null");
             return;
         }
-        
+
         Match match = Regex.Match(message, @"\[([0-9]|10)\]$");
         if (match.Success)
         {
             int emotionCode = int.Parse(match.Groups[1].Value);
-            switch(emotionCode)
+            switch (emotionCode)
             {
                 case 0:
                     animationController.PlayIdle();
