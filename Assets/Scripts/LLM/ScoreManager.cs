@@ -214,12 +214,12 @@ public class ScoreManager : MonoBehaviour
             progressBarUI.UpdateProgress(0.5f, "Consulting evaluation system...");
         yield return new WaitForSeconds(0.2f);
 
-        var request = new UnityWebRequest(OpenAIRequest.Instance.apiUrl, "POST");
+        var request = new UnityWebRequest(PatientSpeech.Instance.apiUrl, "POST");
         byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
         request.SetRequestHeader("Content-Type", "application/json");
-        request.SetRequestHeader("Authorization", "Bearer " + OpenAIRequest.Instance.apiKey);
+        request.SetRequestHeader("Authorization", "Bearer " + PatientSpeech.Instance.apiKey);
 
         Debug.Log("Submitting full conversation for evaluation...");
 
