@@ -513,6 +513,62 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 1380561229037756327, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: reportText
+      value: 
+      objectReference: {fileID: 333830809}
+    - target: {fileID: 1380561229037756327, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: closeButton
+      value: 
+      objectReference: {fileID: 1954227787}
+    - target: {fileID: 1380561229037756327, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: progressBarUI
+      value: 
+      objectReference: {fileID: 2076932622}
+    - target: {fileID: 1380561229037756327, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: evaluationCanvas
+      value: 
+      objectReference: {fileID: 1100157944}
+    - target: {fileID: 2316061101802107184, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: speed
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 2316061101802107184, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: stability
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2316061101802107184, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: similarityBoost
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2316061101802107184, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: styleExaggeration
+      value: 0.4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: setEmotionCode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: currentEmotionCode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: emotionNames.Array.size
+      value: 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: emotionNames.Array.data[8]
+      value: Apologetic
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: emotionNames.Array.data[9]
+      value: Cry
+      objectReference: {fileID: 0}
+    - target: {fileID: 6067852425279652453, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: transcriptText
+      value: 
+      objectReference: {fileID: 1149797311}
     - target: {fileID: 8594120209666061134, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 4.11
@@ -2312,7 +2368,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1120805673}
   m_Direction: 2
   m_Value: 1
-  m_Size: 0.09429997
+  m_Size: 0.18859994
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -4553,7 +4609,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.50024, y: 471.50037}
+  m_AnchoredPosition: {x: -331.50027, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -5854,7 +5910,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
   m_Value: -0.0000035902904
-  m_Size: 0.48751095
+  m_Size: 0.9749999
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
