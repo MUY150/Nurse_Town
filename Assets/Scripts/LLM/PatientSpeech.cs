@@ -12,9 +12,9 @@ using Newtonsoft.Json;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-public class OpenAIRequest : MonoBehaviour
+public class PatientSpeech : MonoBehaviour
 {
-    public static OpenAIRequest Instance; // Singleton instance
+    public static PatientSpeech Instance; // Singleton instance
     public string apiUrl = "https://api.openai.com/v1/chat/completions";
     public string apiKey;
     public string currentScenario = "brocaAphasia"; // New scenario selector
