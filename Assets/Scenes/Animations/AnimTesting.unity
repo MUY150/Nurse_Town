@@ -613,11 +613,37 @@ PrefabInstance:
       propertyPath: m_Name
       value: Humano_Aphasia
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 8029278226265144562, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 335689851042734832, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 85079552}
   m_SourcePrefab: {fileID: 100100000, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+--- !u!1 &85079551 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 335689851042734832, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+  m_PrefabInstance: {fileID: 85079550}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &85079552
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85079551}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a66d412a206a6be4580f4a134fa450c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  apiUrl: https://api.openai.com/v1/chat/completions
+  apiKey: 
+  currentScenario: broccaAphasia
+  lostResponse: I......I.........no.........fast......
+  maxSpeechSpeed: 170
 --- !u!1 &85949098
 GameObject:
   m_ObjectHideFlags: 0
@@ -4609,7 +4635,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.5006, y: 471.50037}
+  m_AnchoredPosition: {x: -331.50024, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -5909,8 +5935,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 175523163}
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
-  m_Value: 0.000010770794
-  m_Size: 0.4875102
+  m_Value: -0.0000035902904
+  m_Size: 0.48751095
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
