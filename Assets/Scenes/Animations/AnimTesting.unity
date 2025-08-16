@@ -641,7 +641,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   apiUrl: https://api.openai.com/v1/chat/completions
   apiKey: 
-  currentScenario: broccaAphasia
+  currentScenario: brocaAphasia
   lostResponse: I......I.........no.........fast......
   maxSpeechSpeed: 170
 --- !u!1 &85949098
@@ -4635,7 +4635,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.50024, y: 471.50037}
+  m_AnchoredPosition: {x: -331.50067, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -5935,8 +5935,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 175523163}
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
-  m_Value: -0.0000035902904
-  m_Size: 0.48751095
+  m_Value: 0.000010770794
+  m_Size: 0.4875102
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
