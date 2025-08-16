@@ -177,7 +177,7 @@ public class PatientSpeech : MonoBehaviour
             var match = Regex.Match(messageContent, @"\[(\d+)\]");
             if (!match.Success || emotionController == null) yield break;
             int emotionCode = int.Parse(match.Groups[1].Value);
-            emotionController.HandleEmotionCode(emotionCode);
+            emotionController.HandleEmotionCode(emotionCode, 0);
         }
     }
 

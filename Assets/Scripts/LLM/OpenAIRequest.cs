@@ -249,8 +249,21 @@ public class OpenAIRequest : MonoBehaviour
             - Use [7] for thinking or processing information
             - Use [8] for an apologetic grimace
             - Use [9] for crying in frustration when unable to communicate";
+
+        string motionInstructions = @"
+            IMPORTANT: You will use the following animations based on the conversation. Then end EVERY response with corresponding motion codes after the emotion code:
+            - [0] for neutral responses or statements
+            - [1] when unable to answer or feeling lost after doctor’s question
+            - [2] for strong affirmative or emphatic agreement
+            - [3] for agreement with an attempt to add clarification
+            - [4] for actively listening or confirming understanding
+            - [5] for passive or minimal acknowledgment
+            - [6] for disagreement, denial, or inability to answer
+            - [7] for intense frustration when unable to express words
+            - [8] for expressing impatience, agitation, or urging the doctor during conversation
+            - [9] for struggling to recall words or thinking of a response";
         
-        string systemPrompt = $"{baseInstructions}\n{emotionInstructions}";
+        string systemPrompt = $"{baseInstructions}\n{emotionInstructions}\n{motionInstructions}";
         chatMessages = new List<Dictionary<string, string>>
         {
             new Dictionary<string, string>
@@ -294,7 +307,7 @@ public class OpenAIRequest : MonoBehaviour
         if (currentSpeechSpeed > maxSpeechSpeed)
         {
             Debug.Log($"Speech too fast ({currentSpeechSpeed} > {maxSpeechSpeed}), using lost response");
-            HandlePatientResponse(lostResponse, 5);
+            HandlePatientResponse(lostResponse, 5, 1);
             yield break;
         }
 
@@ -359,7 +372,7 @@ public class OpenAIRequest : MonoBehaviour
                 var messageContent = jsonResponse["choices"][0]["message"]["content"].ToString();
                 Debug.Log($"Received message: {messageContent.Substring(0, Math.Min(100, messageContent.Length))}...");
 
-                var match = Regex.Match(messageContent, @"\[(\d+)\]");
+                var match = Regex.Match(messageContent, @"\[(\d+)\]\[(\d+)\]");
                 if (!match.Success)
                 {
                     Debug.LogWarning("No emotion code found in response");
@@ -373,9 +386,10 @@ public class OpenAIRequest : MonoBehaviour
                 }
 
                 int emotionCode = int.Parse(match.Groups[1].Value);
-                Debug.Log($"Extracted emotion code: {emotionCode}");
+                int motionCode = int.Parse(match.Groups[2].Value);
+                Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
 
-                HandlePatientResponse(messageContent, emotionCode);
+                HandlePatientResponse(messageContent, emotionCode, motionCode);
             }
             catch (Exception e)
             {
@@ -425,11 +439,13 @@ public class OpenAIRequest : MonoBehaviour
                 var jsonResponse = JObject.Parse(request.downloadHandler.text);
                 var messageContent = jsonResponse["choices"][0]["message"]["content"].ToString();
 
-                var match = Regex.Match(messageContent, @"\[(\d+)\]");
+                var match = Regex.Match(messageContent, @"\[(\d+)\]\[(\d+)\]");
                 if (match.Success && emotionController != null)
                 {
                     int emotionCode = int.Parse(match.Groups[1].Value);
-                    HandlePatientResponse(messageContent, emotionCode);
+                    int motionCode = int.Parse(match.Groups[2].Value);
+                    Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
+                    HandlePatientResponse(messageContent, emotionCode, motionCode);
                 }
             }
             catch (Exception e)
@@ -484,7 +500,7 @@ public class OpenAIRequest : MonoBehaviour
         Debug.LogError(errorDetails);
     }
 
-    private void HandlePatientResponse(string responseText, int emotionCode)
+    private void HandlePatientResponse(string responseText, int emotionCode, int motionCode)
     {
         currentPatientResponse = responseText; // for scoring
 
@@ -502,7 +518,7 @@ public class OpenAIRequest : MonoBehaviour
 
         if (emotionController != null)
         {
-            emotionController.HandleEmotionCode(emotionCode);
+            emotionController.HandleEmotionCode(emotionCode, motionCode);
         }
     }
 
@@ -528,12 +544,14 @@ public class OpenAIRequest : MonoBehaviour
 
         // Extract emotion code if present
         string emotionCode = "";
-        var match = Regex.Match(content, @"\[(\d+)\]$");
+        string motionCode = "";
+        var match = Regex.Match(content, @"\[(\d+)\]\[(\d+)\]");
         if (match.Success)
         {
             emotionCode = $" (Emotion: {match.Groups[1].Value})";
+            motionCode = $" (Motion: {match.Groups[2].Value})";
         }
 
-        Debug.Log($"[{role.ToUpper()}]{emotionCode}\n{content}\n");
+        Debug.Log($"[{role.ToUpper()}]{emotionCode}{motionCode}\n{content}\n");
     }
 }

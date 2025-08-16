@@ -2050,6 +2050,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 2053119591}
     m_Modifications:
+    - target: {fileID: 1877810634713526597, guid: 6229fae84250e9c4aa6da222826b545e, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: -6317805809608689028, guid: 13c78d8f1103b6444a6b80ea9a7ac31a, type: 3}
+    - target: {fileID: 5274801180244381116, guid: 6229fae84250e9c4aa6da222826b545e, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 5071088ae7f9f114ca4ca76d98683f9e, type: 2}
+    - target: {fileID: 5274801180244381116, guid: 6229fae84250e9c4aa6da222826b545e, type: 3}
+      propertyPath: m_Materials.Array.data[1]
+      value: 
+      objectReference: {fileID: 2100000, guid: ba2248dcdb03e75408160bf75a6efb0b, type: 2}
     - target: {fileID: 5840902313917888864, guid: 6229fae84250e9c4aa6da222826b545e, type: 3}
       propertyPath: m_Name
       value: Table
@@ -4748,7 +4760,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.5006, y: 471.50037}
+  m_AnchoredPosition: {x: -331.50024, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -6048,8 +6060,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 175523163}
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
-  m_Value: 0.000010770794
-  m_Size: 0.9749997
+  m_Value: -0.0000035902904
+  m_Size: 0.9749999
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
