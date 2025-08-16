@@ -630,8 +630,16 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 85079553}
     - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: setMotionCode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: setEmotionCode
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: currentMotionCode
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: currentEmotionCode
