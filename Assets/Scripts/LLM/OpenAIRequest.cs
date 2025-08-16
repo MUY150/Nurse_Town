@@ -85,7 +85,6 @@ public class OpenAIRequest : MonoBehaviour
         ScoreManager.Instance.Initialize(currentScenario);
 
         // Initialize patient instructions and chat
-        InitializePatientInstructions();
         InitializeChat();
 
         // 获取组件
@@ -232,31 +231,12 @@ public class OpenAIRequest : MonoBehaviour
     private void InitializePatientInstructions()
     {
         string baseInstructions = LoadPromptFromFile("baseInstructions.txt");
-        string caseHistoryPrompt = LoadPromptFromFile("caseHistory.txt");
-        patientInstructionsList = new List<string>();
-
-        int randomIndex = 1;
-        string patientFile = $"patient{randomIndex}.txt";
-        string patientSpecific = LoadPromptFromFile(patientFile);
-
-        if (string.IsNullOrEmpty(patientSpecific))
-        {
-            Debug.LogError("Failed to load patient file: " + patientFile);
-        }
-        else
-        {
-            string fullPrompt = $"{baseInstructions}\n{caseHistoryPrompt}\n{patientSpecific}";
-            patientInstructionsList.Add(fullPrompt);
-        }
-
-        if (patientInstructionsList.Count == 0)
-        {
-            Debug.LogError("No patient instructions loaded for scenario: " + currentScenario);
-        }
+        
     }
 
     private void InitializeChat()
     {
+        string baseInstructions = LoadPromptFromFile("baseInstructions.txt");
         string emotionInstructions = @"
             IMPORTANT: You will analysis your emotion based on the conversation. Then end EVERY response with corresponding emotion codes:
             - Use [0] for neutral responses or statements
@@ -264,25 +244,22 @@ public class OpenAIRequest : MonoBehaviour
             - Use [2] for positive responses, gratitude, or when feeling better
             - Use [3] for pain
             - Use [4] for sad
-            - Use [5] for anger or frustration";
-
-        // Randomly select a patient instruction
-        System.Random rand = new System.Random();
-        int patientIndex = rand.Next(patientInstructionsList.Count);
-        string selectedPatientInstructions = patientInstructionsList[patientIndex];
-
-        // Combine selected patient instructions with emotion instructions
-        chatMessages = new List<Dictionary<string, string>>()
+            - Use [5] for anger
+            - Use [6] for frustration due to speech block or not being understood
+            - Use [7] for thinking or processing information
+            - Use [8] for an apologetic grimace
+            - Use [9] for crying in frustration when unable to communicate";
+        
+        string systemPrompt = $"{baseInstructions}\n{emotionInstructions}";
+        chatMessages = new List<Dictionary<string, string>>
         {
-            new Dictionary<string, string>()
+            new Dictionary<string, string>
             {
                 { "role", "system" },
-                { "content", $"{selectedPatientInstructions}\n\n{emotionInstructions}" }
+                { "content", systemPrompt }
             }
         };
-
-        PrintChatMessage(chatMessages);
-        StartCoroutine(PostRequest());
+        Debug.Log("System: " + systemPrompt);
     }
 
     public void ReceiveNurseTranscription(string transcribedText, float speechWpm)
@@ -533,10 +510,9 @@ public class OpenAIRequest : MonoBehaviour
     {
         var requestObject = new
         {
-            model = "gpt-4",
+            model = "gpt-4o-2024-08-06",
             messages = chatMessages,
-            temperature = 0.7f,
-            max_tokens = 1000 // 添加token限制避免超长响应
+            temperature = 0.8f
         };
         return JsonConvert.SerializeObject(requestObject, Formatting.Indented);
     }

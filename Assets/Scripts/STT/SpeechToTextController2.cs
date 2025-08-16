@@ -22,6 +22,42 @@ public class SpeechToTextController2 : MonoBehaviour
         LoadOpenAIApiKey();
     }
 
+    // 等待OpenAIRequest实例并发送转录结果
+    private async Task WaitForOpenAIRequestAndSend(string transcriptionText, float wpm)
+    {
+        // 等待最多5秒来获取OpenAIRequest实例
+        float waitTime = 0f;
+        float maxWaitTime = 5f;
+
+        while (OpenAIRequest.Instance == null && waitTime < maxWaitTime)
+        {
+            await Task.Delay(100); // 等待100ms
+            waitTime += 0.1f;
+        }
+
+        if (OpenAIRequest.Instance != null)
+        {
+            Debug.Log("STT: Found OpenAIRequest instance, sending transcription...");
+            OpenAIRequest.Instance.ReceiveNurseTranscription(transcriptionText, wpm);
+        }
+        else
+        {
+            Debug.LogError("STT: OpenAIRequest instance not found after waiting 5 seconds!");
+
+            // 尝试通过FindObjectOfType查找
+            var openAIRequest = FindObjectOfType<OpenAIRequest>();
+            if (openAIRequest != null)
+            {
+                Debug.Log("STT: Found OpenAIRequest via FindObjectOfType, sending transcription...");
+                openAIRequest.ReceiveNurseTranscription(transcriptionText, wpm);
+            }
+            else
+            {
+                Debug.LogError("STT: No OpenAIRequest component found in the scene!");
+            }
+        }
+    }
+
     // 新的API密钥加载方法
     private void LoadOpenAIApiKey()
     {
@@ -141,14 +177,7 @@ public class SpeechToTextController2 : MonoBehaviour
         }
 
         // Fiona update 11/13: integrate with patient NPC
-        if (OpenAIRequest.Instance != null)
-        {
-            OpenAIRequest.Instance.ReceiveNurseTranscription(speech.text, speech.wpm);
-        }
-        else
-        {
-            Debug.LogError("OpenAIRequest instance not found.");
-        }
+        await WaitForOpenAIRequestAndSend(speech.text, speech.wpm);
     }
 
     private async Task<WhisperResult> SendToWhisperAPI(string filePath, string model, string language, float temperature)
