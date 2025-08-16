@@ -43,7 +43,7 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: head_nod
+      name: nod_big_arm_open
       takeName: Armature|Armature|urdf_fbxAction|Base Layer
       internalID: 7345289874603697450
       firstFrame: 540
