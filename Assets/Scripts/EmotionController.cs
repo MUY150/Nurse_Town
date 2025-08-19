@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEditor.Animations;
+//using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Serialization;
@@ -15,15 +15,19 @@ public class EmotionController : MonoBehaviour
     public Animator animator;
     
     [Header("Debug Settings")]
-    public bool setEmotionCode = true;
+    public bool setEmotionCode = false;
+    public bool setMotionCode = false;
     public bool disableMotion = false;
     public int currentEmotionCode;
+    public int currentMotionCode;
     public string[] emotionNames = {"Neutral", "Discomfort", "Happy", "Pain", "Sad", "Anger", "Frustrated", "Thinking", "Apologetic", "Cry"};
+    public string[] motionNames = { "Neutral", "Confused", "Nod 1", "Nod 2", "Nod 3", "Nod 4", "Head Shake 1", "Head Shake 2", "Tap Table", "Struggling"};
     
     private List<TrackAsset> allTracks = new();
     private List<TTSManager.WordTiming> charTimings;
     private List<TTSManager.WordTiming> wordTimings;
     private int previousEmotionCode = 0;
+    private int previousMotionCode = 0;
 
     void Start()
     {
@@ -137,17 +141,20 @@ public class EmotionController : MonoBehaviour
     }
     
     
-    public void HandleEmotionCode(int emotionCode)
+    public void HandleEmotionCode(int emotionCode, int motionCode)
     {
         if (!disableMotion)
         {
-            animator.ResetTrigger(emotionNames[previousEmotionCode]);
-            Debug.Log("Reset trigger: " + emotionNames[previousEmotionCode]);
+            animator.ResetTrigger(motionNames[previousMotionCode]);
+            Debug.Log("Reset trigger: " + motionNames[previousMotionCode]);
         }
 
         previousEmotionCode = emotionCode;
-        if (!setEmotionCode) { currentEmotionCode = emotionCode;}
+        previousMotionCode = motionCode;
         
+        if (!setEmotionCode) { currentEmotionCode = emotionCode;}
+        if (!setMotionCode) { currentMotionCode = motionCode; }
+
         if (currentEmotionCode < 0 || currentEmotionCode >= allTracks.Count)
         {
             Debug.LogError("Track index out of bounds.");
@@ -157,6 +164,7 @@ public class EmotionController : MonoBehaviour
         TrackAsset selectedTrack = allTracks[currentEmotionCode];
         
         Debug.Log("Emotion Code: " + emotionCode);
+        Debug.Log("Motion Code: " + motionCode);
         Debug.Log($"Selected track: {selectedTrack.name}");
 
         foreach (var track in allTracks.Where(track => track.name != "Blink Track"))
@@ -166,8 +174,8 @@ public class EmotionController : MonoBehaviour
         
         if (!disableMotion)
         {
-            animator.SetTrigger(emotionNames[currentEmotionCode]);
-            Debug.Log("Set trigger: " + emotionNames[currentEmotionCode]);
+            animator.SetTrigger(motionNames[currentMotionCode]);
+            Debug.Log("Set trigger: " + motionNames[currentEmotionCode]);
         }
         
     }

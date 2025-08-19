@@ -5,12 +5,22 @@ using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
+using TMPro;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance;
+
+    [Header("UI References")]
+    public Canvas evaluationCanvas;
+    public TextMeshProUGUI reportText;
+    public Button closeButton;
+
+    [Header("Progress Bar")]
+    public MedicalProgressBarUI progressBarUI; // 引用进度条UI管理器
 
     private string scoringPrompt = "";
     private string currentScenario = "";
@@ -24,13 +34,15 @@ public class ScoreManager : MonoBehaviour
             Destroy(gameObject);
     }
 
-    void Update()
+    void Start()
     {
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            Debug.Log("E key pressed — submitting full evaluation.");
-            SubmitEvaluation();
-        }
+        // 初始化时隐藏评估界面
+        if (evaluationCanvas != null)
+            evaluationCanvas.gameObject.SetActive(false);
+
+        // 绑定关闭按钮事件
+        if (closeButton != null)
+            closeButton.onClick.AddListener(HideEvaluationPanel);
     }
 
     public void Initialize(string scenario)
@@ -66,10 +78,90 @@ public class ScoreManager : MonoBehaviour
     {
         if (conversationTurns.Count == 0)
         {
-            Debug.LogWarning("No conversation turns recorded.");
+            Debug.LogWarning("No conversation turns recorded. Creating a placeholder report.");
+            CreateNoConversationReport();
             return;
         }
+
+        Debug.Log($"开始生成评估报告，共有 {conversationTurns.Count} 轮对话");
+
+        // 显示进度条
+        if (progressBarUI != null)
+            progressBarUI.ShowProgressBar();
+
+        // 开始评估协程
         StartCoroutine(EvaluateFullConversationCoroutine());
+    }
+
+    private void CreateNoConversationReport()
+    {
+        // 确保进度条隐藏
+        if (progressBarUI != null)
+            progressBarUI.HideProgressBar();
+
+        // 显示评估界面
+        if (evaluationCanvas != null)
+            evaluationCanvas.gameObject.SetActive(true);
+
+        StringBuilder reportContent = new StringBuilder();
+        reportContent.AppendLine("Evaluation Report");
+        reportContent.AppendLine();
+        reportContent.AppendLine("No Conversation Recorded");
+        reportContent.AppendLine();
+        reportContent.AppendLine("It appears that no conversation turns have been recorded during this session.");
+        reportContent.AppendLine();
+        reportContent.AppendLine("To receive a proper evaluation, please:");
+        reportContent.AppendLine("• Engage in conversation with the patient");
+        reportContent.AppendLine("• Complete at least a few dialogue exchanges");
+        reportContent.AppendLine("• Then click the Finish button to generate your assessment");
+        reportContent.AppendLine();
+        reportContent.AppendLine("Please start a new conversation and try again.");
+
+        if (reportText != null)
+        {
+            reportText.text = reportContent.ToString();
+            StartCoroutine(RefreshScrollViewLayout());
+        }
+
+        Debug.Log("显示无对话记录提示报告");
+    }
+
+    private void DisplayErrorReport(string rawContent, string errorMessage)
+    {
+        // 隐藏进度条
+        if (progressBarUI != null)
+            progressBarUI.HideProgressBar();
+
+        // 显示评估界面
+        if (evaluationCanvas != null)
+            evaluationCanvas.gameObject.SetActive(true);
+
+        StringBuilder reportContent = new StringBuilder();
+        reportContent.AppendLine("Evaluation Report - Error");
+        reportContent.AppendLine();
+        reportContent.AppendLine("❌ Report Generation Failed");
+        reportContent.AppendLine();
+        reportContent.AppendLine("An error occurred while generating your evaluation report.");
+        reportContent.AppendLine();
+        reportContent.AppendLine("Technical Details:");
+        reportContent.AppendLine($"Error: {errorMessage}");
+        reportContent.AppendLine();
+        reportContent.AppendLine("AI Response Preview:");
+        reportContent.AppendLine("---");
+
+        string contentPreview = rawContent.Length > 500 ? rawContent.Substring(0, 500) + "..." : rawContent;
+        reportContent.AppendLine(contentPreview);
+        reportContent.AppendLine("---");
+        reportContent.AppendLine();
+        reportContent.AppendLine("Please try again or contact support if the problem persists.");
+
+        if (reportText != null)
+        {
+            reportText.text = reportContent.ToString();
+            StartCoroutine(RefreshScrollViewLayout());
+        }
+
+        Debug.Log("显示错误报告给用户");
     }
 
     private IEnumerator EvaluateFullConversationCoroutine()
@@ -77,8 +169,15 @@ public class ScoreManager : MonoBehaviour
         if (string.IsNullOrEmpty(scoringPrompt))
         {
             Debug.LogWarning("Scoring prompt not loaded.");
+            if (progressBarUI != null)
+                progressBarUI.HideProgressBar();
             yield break;
         }
+
+        // 更新进度：准备数据
+        if (progressBarUI != null)
+            progressBarUI.UpdateProgress(0.1f, "Analyzing patient conversation...");
+        yield return new WaitForSeconds(0.5f);
 
         StringBuilder conversationBuilder = new StringBuilder();
         for (int i = 0; i < conversationTurns.Count; i++)
@@ -89,9 +188,14 @@ public class ScoreManager : MonoBehaviour
             conversationBuilder.AppendLine();
         }
 
+        // 更新进度：构建请求
+        if (progressBarUI != null)
+            progressBarUI.UpdateProgress(0.3f, "Preparing clinical assessment...");
+        yield return new WaitForSeconds(0.3f);
+
         string fullPrompt = $"{scoringPrompt}\n\nNow analyze the following full simulated conversation between the patient and nursing student:\n{conversationBuilder}";
         Debug.Log($"Prompt length: {fullPrompt.Length} characters");
-        Debug.Log($"Estimated tokens (rough): {fullPrompt.Length / 4} tokens");
+
         var requestBody = new
         {
             model = "gpt-4",
@@ -105,6 +209,11 @@ public class ScoreManager : MonoBehaviour
 
         string jsonBody = JsonConvert.SerializeObject(requestBody);
 
+        // 更新进度：发送请求
+        if (progressBarUI != null)
+            progressBarUI.UpdateProgress(0.5f, "Consulting evaluation system...");
+        yield return new WaitForSeconds(0.2f);
+
         var request = new UnityWebRequest(OpenAIRequest.Instance.apiUrl, "POST");
         byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonBody);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
@@ -113,36 +222,236 @@ public class ScoreManager : MonoBehaviour
         request.SetRequestHeader("Authorization", "Bearer " + OpenAIRequest.Instance.apiKey);
 
         Debug.Log("Submitting full conversation for evaluation...");
-        yield return request.SendWebRequest();
+
+        // 开始网络请求，同时更新进度
+        var operation = request.SendWebRequest();
+
+        float requestStartTime = Time.time;
+        while (!operation.isDone)
+        {
+            float elapsedTime = Time.time - requestStartTime;
+            float progressValue = Mathf.Lerp(0.5f, 0.8f, Mathf.Clamp01(elapsedTime / 10f));
+            if (progressBarUI != null)
+                progressBarUI.UpdateProgress(progressValue, "Generating clinical feedback...");
+            yield return null;
+        }
 
         if (request.result != UnityWebRequest.Result.Success)
         {
             Debug.LogError("OpenAI Request Error: " + request.error);
+            if (progressBarUI != null)
+                progressBarUI.HideProgressBar();
             yield break;
         }
 
-        var jsonResponse = JObject.Parse(request.downloadHandler.text);
-        string responseContent = jsonResponse["choices"][0]["message"]["content"].ToString();
+        // 更新进度：处理响应
+        if (progressBarUI != null)
+            progressBarUI.UpdateProgress(0.9f, "Compiling assessment report...");
+        yield return new WaitForSeconds(0.3f);
 
+        // 将JSON解析和处理分离到非协程方法中
+        yield return StartCoroutine(ProcessAIResponse(request.downloadHandler.text));
+    }
+
+    // 新的协程方法来处理AI响应
+    private IEnumerator ProcessAIResponse(string responseText)
+    {
+        Debug.Log("=== OpenAI原始响应 ===");
+        Debug.Log($"完整响应长度: {responseText.Length} 字符");
+        Debug.Log($"完整响应内容: {responseText}");
+        Debug.Log("==================");
+
+        // 完成进度
+        if (progressBarUI != null)
+            progressBarUI.UpdateProgress(1.0f, "Finalizing evaluation...");
+        yield return new WaitForSeconds(0.5f);
+
+        // 在非协程方法中处理JSON解析和错误处理
+        ProcessEvaluationResult(responseText);
+    }
+
+    // 非协程方法处理JSON解析
+    private void ProcessEvaluationResult(string responseText)
+    {
         try
         {
+            var jsonResponse = JObject.Parse(responseText);
+            string responseContent = jsonResponse["choices"][0]["message"]["content"].ToString();
+
+            Debug.Log("=== 提取的content ===");
+            Debug.Log($"Content长度: {responseContent.Length} 字符");
+            Debug.Log($"Content内容: {responseContent}");
+            Debug.Log("==================");
+
             var evaluation = JsonConvert.DeserializeObject<DynamicEvaluationResult>(responseContent);
-            Debug.Log("===== FINAL EVALUATION =====");
-            foreach (var criterion in evaluation.criteria)
-            {
-                Debug.Log($"[{criterion.name}] Score: {criterion.score}/{criterion.maxScore} — {criterion.explanation}");
-            }
-            Debug.Log($"Total Score: {evaluation.totalScore}");
-            Debug.Log($"Performance Level: {evaluation.performanceLevel}");
-            Debug.Log($"Overall Summary: {evaluation.overallExplanation}");
+
+            // 隐藏进度条
+            if (progressBarUI != null)
+                progressBarUI.HideProgressBar();
+
+            // 显示结果
+            DisplayEvaluationToConsole(evaluation);
+            DisplayEvaluationToUI(evaluation);
         }
         catch (Exception ex)
         {
-            Debug.LogError("Failed to parse evaluation JSON: " + ex.Message);
+            Debug.LogError("❌ JSON解析失败: " + ex.Message);
+            Debug.LogError($"尝试解析的内容: {responseText}");
+
+            // 显示错误报告
+            DisplayErrorReport(responseText, ex.Message);
         }
+    }
+
+    private void DisplayEvaluationToConsole(DynamicEvaluationResult evaluation)
+    {
+        Debug.Log("===== FINAL EVALUATION =====");
+        foreach (var criterion in evaluation.criteria)
+        {
+            Debug.Log($"[{criterion.name}] Score: {criterion.score}/{criterion.maxScore} — {criterion.explanation}");
+        }
+        Debug.Log($"Total Score: {evaluation.totalScore}");
+        Debug.Log($"Performance Level: {evaluation.performanceLevel}");
+        Debug.Log($"Overall Summary: {evaluation.overallExplanation}");
+    }
+
+    private void DisplayEvaluationToUI(DynamicEvaluationResult evaluation)
+    {
+        // 确保进度条已隐藏
+        if (progressBarUI != null)
+            progressBarUI.HideProgressBar();
+
+        // 显示评估界面
+        if (evaluationCanvas != null)
+            evaluationCanvas.gameObject.SetActive(true);
+
+        // 使用新的格式化器
+        MedicalReportFormatter formatter = reportText.GetComponent<MedicalReportFormatter>();
+        if (formatter != null)
+        {
+            formatter.ApplyFormattedReport(evaluation, conversationTurns.Count);
+            Debug.Log("使用格式化器显示报告");
+        }
+        else
+        {
+            Debug.LogError("未找到MedicalReportFormatter组件！");
+            // 回退到原始格式
+            DisplayOriginalFormat(evaluation);
+        }
+
+        // 保存评估到AWS数据库
+        if (AWSAPIConnector.Instance != null)
+        {
+            Debug.Log("💾 Saving evaluation to AWS database...");
+            AWSAPIConnector.Instance.SaveEvaluationFromScoreManager(evaluation);
+        }
+        else
+        {
+            Debug.LogWarning("AWSAPIConnector instance not found - evaluation not saved to database");
+        }
+
+        StartCoroutine(RefreshScrollViewLayout());
+    }
+
+    private void DisplayOriginalFormat(DynamicEvaluationResult evaluation)
+    {
+        StringBuilder reportContent = new StringBuilder();
+        reportContent.AppendLine("Evaluation Report");
+        reportContent.AppendLine();
+        reportContent.AppendLine($"Conversation Summary: {conversationTurns.Count} dialogue turns completed");
+        reportContent.AppendLine();
+        reportContent.AppendLine("Assessment Criteria Details");
+        reportContent.AppendLine();
+
+        foreach (var criterion in evaluation.criteria)
+        {
+            reportContent.AppendLine($"• {criterion.name}");
+            reportContent.AppendLine($"  Score: {criterion.score}/{criterion.maxScore}");
+            reportContent.AppendLine($"  Explanation: {criterion.explanation}");
+            reportContent.AppendLine();
+        }
+
+        reportContent.AppendLine("Overall Assessment");
+        reportContent.AppendLine($"Total Score: {evaluation.totalScore}");
+        reportContent.AppendLine($"Performance Level: {evaluation.performanceLevel}");
+        reportContent.AppendLine();
+        reportContent.AppendLine("Overall Summary");
+        reportContent.AppendLine(evaluation.overallExplanation);
+
+        if (reportText != null)
+        {
+            reportText.text = reportContent.ToString();
+        }
+    }
+
+    private IEnumerator RefreshScrollViewLayout()
+    {
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+
+        var contentSizeFitter = reportText.GetComponent<UnityEngine.UI.ContentSizeFitter>();
+        if (contentSizeFitter != null)
+        {
+            contentSizeFitter.SetLayoutVertical();
+        }
+
+        Transform contentParent = reportText.transform.parent;
+        if (contentParent != null)
+        {
+            var parentContentSizeFitter = contentParent.GetComponent<UnityEngine.UI.ContentSizeFitter>();
+            if (parentContentSizeFitter != null)
+            {
+                parentContentSizeFitter.SetLayoutVertical();
+            }
+        }
+
+        Canvas.ForceUpdateCanvases();
+
+        ScrollRect scrollRect = reportText.GetComponentInParent<ScrollRect>();
+        if (scrollRect != null)
+        {
+            scrollRect.verticalNormalizedPosition = 1f;
+            Debug.Log($"ScrollRect找到了！Content高度: {scrollRect.content.rect.height}");
+            Debug.Log($"Viewport高度: {scrollRect.viewport.rect.height}");
+            Debug.Log($"可滚动: {scrollRect.content.rect.height > scrollRect.viewport.rect.height}");
+        }
+        else
+        {
+            Debug.Log("没有找到ScrollRect组件，但这可能是正常的");
+        }
+    }
+
+    public void HideEvaluationPanel()
+    {
+        if (evaluationCanvas != null)
+        {
+            evaluationCanvas.gameObject.SetActive(false);
+            Debug.Log("评估报告已关闭");
+        }
+
+        // 确保进度条也被隐藏
+        if (progressBarUI != null)
+            progressBarUI.HideProgressBar();
+    }
+
+    public int GetConversationCount()
+    {
+        return conversationTurns.Count;
+    }
+
+    public bool CanViewReport()
+    {
+        return true;
+    }
+
+    // 获取对话轮次数据，供AWS连接器使用
+    public List<ConversationTurn> GetConversationTurns()
+    {
+        return conversationTurns;
     }
 }
 
+// 数据类定义
 [Serializable]
 public class ConversationTurn
 {

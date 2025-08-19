@@ -12,9 +12,9 @@ using Newtonsoft.Json;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-public class OpenAIRequest : MonoBehaviour
+public class PatientSpeech : MonoBehaviour
 {
-    public static OpenAIRequest Instance; // Singleton instance
+    public static PatientSpeech Instance; // Singleton instance
     public string apiUrl = "https://api.openai.com/v1/chat/completions";
     public string apiKey;
     public string currentScenario = "brocaAphasia"; // New scenario selector
@@ -177,7 +177,7 @@ public class OpenAIRequest : MonoBehaviour
             var match = Regex.Match(messageContent, @"\[(\d+)\]");
             if (!match.Success || emotionController == null) yield break;
             int emotionCode = int.Parse(match.Groups[1].Value);
-            emotionController.HandleEmotionCode(emotionCode);
+            emotionController.HandleEmotionCode(emotionCode, 0);
         }
     }
 
