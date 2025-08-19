@@ -80,6 +80,11 @@ crashlytics-build.properties
 ### </Unity> ###
 ################
 
+# Ignore local config
+/[Aa]ssets/StreamingAssets/config.json
+/[Aa]ssets/StreamingAssets/config.json.meta
+
+
 ###############
 ### <FMOD> ###
 ###############

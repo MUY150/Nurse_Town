@@ -513,6 +513,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 482709129696049257, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: m_CullingMode
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1368680138805522895, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: m_LocalRotation.w
       value: 0.7071067
@@ -731,6 +735,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 8029278226265144562, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+    - {fileID: 1380561229037756327, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -757,7 +762,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   apiUrl: https://api.openai.com/v1/chat/completions
   apiKey: 
-  currentScenario: brocaAphasia
+  currentScenario: task1
   lostResponse: I......I.........no.........fast......
   maxSpeechSpeed: 170
 --- !u!95 &85079553 stripped

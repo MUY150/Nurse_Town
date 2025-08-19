@@ -23,7 +23,6 @@ public class OpenAIRequest : MonoBehaviour
     public float maxSpeechSpeed = 170f;
     private CharacterAnimationController animationController;
     private BloodEffectController bloodEffectController;
-    private ScoringSystem scoringSystem = new ScoringSystem(); // For scoring system
     private EmotionController emotionController;
     private float currentSpeechSpeed;
 
