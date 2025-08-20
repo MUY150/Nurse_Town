@@ -196,19 +196,13 @@ public class TTSManager : MonoBehaviour
         //text = "With tenure, Suzie'd have all the more leisure for yachting, but her publications are no good.";
 
         // Strip emotion code for TTS but keep original text for animation
-        string ttsText = text;
-        //Regex.Replace(ttsText, @"\[\d+\]", "");
-        Match match = Regex.Match(text, @"\[([0-9]|10)\]$");
-        if (match.Success)
-        {
-            ttsText = text.Substring(0, text.Length - 6).Trim();
-        }
+        //string ttsText = text;
 
-        Debug.Log($"TTS Manager: Processing text: '{ttsText}'");
+        Debug.Log($"TTS Manager: Processing text: '{text}'");
 
         // Get audio data from ElevenLabs TTS service
         (byte[] audioData, List<WordTiming> wordTimings) = await GetElevenLabsTTSAudio(
-            ttsText,
+            text,
             voiceId,
             modelId,
             stability,

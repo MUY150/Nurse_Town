@@ -429,7 +429,10 @@ public class OpenAIRequest : MonoBehaviour
                 int motionCode = int.Parse(match.Groups[2].Value);
                 Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
 
-                HandlePatientResponse(messageContent, emotionCode, motionCode);
+                string ttsText = messageContent.Substring(0, messageContent.Length - 6).Trim();
+                Debug.Log($"TTS Text: {ttsText}");
+                    
+                HandlePatientResponse(ttsText, emotionCode, motionCode);
             }
             catch (Exception e)
             {
@@ -483,7 +486,11 @@ public class OpenAIRequest : MonoBehaviour
                     int emotionCode = int.Parse(match.Groups[1].Value);
                     int motionCode = int.Parse(match.Groups[2].Value);
                     Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
-                    HandlePatientResponse(messageContent, emotionCode, motionCode);
+                    
+                    string ttsText = messageContent.Substring(0, messageContent.Length - 6).Trim();
+                    Debug.Log($"TTS Text: {ttsText}");
+                    
+                    HandlePatientResponse(ttsText, emotionCode, motionCode);
                 }
             }
             catch (Exception e)
