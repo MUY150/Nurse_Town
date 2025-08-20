@@ -1,41 +1,42 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
-using System.Text;
-using Newtonsoft.Json.Linq;
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Linq;
-using System.Text.RegularExpressions;
 
 public class OpenAIRequest : MonoBehaviour
 {
     public static OpenAIRequest Instance; // Singleton instance
     public string apiUrl = "https://api.openai.com/v1/chat/completions";
     public string apiKey;
-    public string currentScenario = "Therapy"; // New scenario selector
-    private string currentPatientResponse = "";
-    public string lostResponse = "I......I.........no.........fast......";
-    public float maxSpeechSpeed = 170f;
+    public string CurrentUserId { get; private set; }
+    [SerializeField] private string currentScenario = ""; // left empty until login sets it
+    public string lostResponse = "umm... fast... uh... fast... ";
+    public float maxSpeechSpeed = 200f;
+    // Components
     private CharacterAnimationController animationController;
-    private BloodEffectController bloodEffectController;
     private EmotionController emotionController;
-    private float currentSpeechSpeed;
 
+    // Internal state
+    private float currentSpeechSpeed;
     private string basePath;
-    private List<string> patientInstructionsList;
     private List<Dictionary<string, string>> chatMessages;
+    private string currentPatientResponse = "";
+
+    // Precompiled regex for emotion/motion code extraction
+    private static readonly Regex EmotionMotionRegex =
+        new Regex(@"\[(\d+)\]\[(\d+)\]", RegexOptions.Compiled);
 
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
-            // Uncomment if you want this object to persist across scenes
             // DontDestroyOnLoad(gameObject);
         }
         else
@@ -46,26 +47,25 @@ public class OpenAIRequest : MonoBehaviour
 
     void Start()
     {
-        // 网络安全设置 - 在所有平台应用（除了WebGL）
-#if !UNITY_WEBGL
+        // --- Development-only SSL/TLS relaxations (avoid in production) ---
+#if UNITY_EDITOR && !UNITY_WEBGL
         try
         {
-            // 完全跳过SSL证书验证
-            System.Net.ServicePointManager.ServerCertificateValidationCallback =
-                delegate { return true; };
+            // Completely bypass SSL certificate validation (DEV ONLY)
+            System.Net.ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
 
-            // 设置多种安全协议支持
+            // Support multiple security protocols
             System.Net.ServicePointManager.SecurityProtocol =
                 (System.Net.SecurityProtocolType)3072 | // Tls12
-                (System.Net.SecurityProtocolType)768 |  // Tls11  
+                (System.Net.SecurityProtocolType)768  | // Tls11
                 (System.Net.SecurityProtocolType)192;   // Tls10
 
-            // 禁用HTTP/2，强制使用HTTP/1.1
+            // Force HTTP/1.1 behavior tweaks
             System.Net.ServicePointManager.DefaultConnectionLimit = 10;
             System.Net.ServicePointManager.Expect100Continue = false;
             System.Net.ServicePointManager.UseNagleAlgorithm = false;
 
-            Debug.Log("✓ Enhanced SSL/TLS settings configured");
+            Debug.Log("DEV SSL/TLS overrides configured");
         }
         catch (Exception e)
         {
@@ -73,27 +73,27 @@ public class OpenAIRequest : MonoBehaviour
         }
 #endif
 
-        // 开始网络诊断
+        // Load API key first, then run diagnostics
+        LoadApiKey();
         StartCoroutine(NetworkDiagnostics());
 
-        // 加载API密钥
-        LoadApiKey();
-
-        // 初始化路径和组件
-        basePath = Path.Combine(Application.streamingAssetsPath, "Prompts", currentScenario);
-        ScoreManager.Instance.Initialize(currentScenario);
-
-        // Initialize patient instructions and chat
-        InitializeChat();
-
-        // 获取组件
+        // Initialize components
         animationController = GetComponent<CharacterAnimationController>();
-        bloodEffectController = GetComponent<BloodEffectController>();
         emotionController = GetComponent<EmotionController>();
-
         if (emotionController == null)
-        {
             Debug.LogError("EmotionController component not found on the GameObject.");
+
+        // Initialize prompts/chat only if a scenario is already set (e.g., via Inspector)
+        if (!string.IsNullOrEmpty(currentScenario))
+        {
+            basePath = Path.Combine(Application.streamingAssetsPath, "Prompts", currentScenario);
+            if (ScoreManager.Instance != null)
+                ScoreManager.Instance.Initialize(currentScenario);
+            InitializeChat();
+        }
+        else
+        {
+            Debug.LogWarning("[OpenAIRequest] currentScenario is empty at Start; will initialize after login via ApplyLoginContext.");
         }
     }
 
@@ -101,16 +101,15 @@ public class OpenAIRequest : MonoBehaviour
     {
         Debug.Log("=== API KEY LOADING ===");
 
-        // 方法1: 从环境变量加载
+        // Method 1: Environment variable
         apiKey = EnvironmentLoader.GetEnvVariable("OPENAI_API_KEY");
-
         if (!string.IsNullOrEmpty(apiKey))
         {
             Debug.Log("✓ API key loaded from environment variables");
             return;
         }
 
-        // 方法2: 从StreamingAssets配置文件加载
+        // Method 2: StreamingAssets config
         string configPath = Path.Combine(Application.streamingAssetsPath, "config.json");
         Debug.Log($"Looking for config file at: {configPath}");
 
@@ -134,7 +133,7 @@ public class OpenAIRequest : MonoBehaviour
             }
         }
 
-        // 方法3: 检查是否直接在Inspector中设置了
+        // Method 3: Inspector
         if (!string.IsNullOrEmpty(apiKey))
         {
             Debug.Log("✓ API key found in Inspector");
@@ -144,20 +143,48 @@ public class OpenAIRequest : MonoBehaviour
         Debug.LogError("✗ No API key found! Please set it via environment variable, config file, or Inspector");
     }
 
+    /// <summary>
+    /// Called by LoginPanel after successful login. Sets user and switches scenario based on simulationLevel.
+    /// Rebuilds basePath, re-creates the system prompt/chat, and reinitializes scoring for the scenario.
+    /// </summary>
+    public void ApplyLoginContext(string userId, int simulationLevel)
+    {
+        CurrentUserId = userId;
+        Debug.Log($"[OpenAIRequest] Authenticated user: {CurrentUserId}");
+
+        // Map level → scenario
+        switch (simulationLevel)
+        {
+            case 1: currentScenario = "task1"; break;
+            case 2: currentScenario = "task2"; break;
+            case 3: currentScenario = "task3"; break;
+            default:
+                Debug.LogWarning($"[OpenAIRequest] Unknown simulationLevel {simulationLevel}, defaulting to task1");
+                currentScenario = "task1";
+                break;
+        }
+
+        // Rebuild base path + reset prompt/chat + re-init scoring
+        basePath = Path.Combine(Application.streamingAssetsPath, "Prompts", currentScenario);
+        InitializeChat();
+        if (ScoreManager.Instance != null)
+            ScoreManager.Instance.Initialize(currentScenario);
+
+        Debug.Log($"[OpenAIRequest] Scenario set to '{currentScenario}'. basePath: {basePath}");
+    }
+
     private IEnumerator NetworkDiagnostics()
     {
         Debug.Log("=== NETWORK DIAGNOSTICS START ===");
 
-        // 测试1: 基础网络连接
+        // Test 1: Basic connectivity
         Debug.Log("Testing basic internet connectivity...");
         UnityWebRequest testRequest = UnityWebRequest.Get("https://www.google.com");
-        testRequest.timeout = 10; // 10秒超时
+        testRequest.timeout = 10;
         yield return testRequest.SendWebRequest();
 
         if (testRequest.result == UnityWebRequest.Result.Success)
-        {
             Debug.Log("✓ Basic internet connection: OK");
-        }
         else
         {
             Debug.LogError("✗ Basic internet connection: FAILED");
@@ -165,16 +192,14 @@ public class OpenAIRequest : MonoBehaviour
             Debug.LogError($"Response Code: {testRequest.responseCode}");
         }
 
-        // 测试2: HTTPS连接
+        // Test 2: HTTPS
         Debug.Log("Testing HTTPS connection...");
         UnityWebRequest httpsTest = UnityWebRequest.Get("https://httpbin.org/get");
         httpsTest.timeout = 10;
         yield return httpsTest.SendWebRequest();
 
         if (httpsTest.result == UnityWebRequest.Result.Success)
-        {
             Debug.Log("✓ HTTPS connection: OK");
-        }
         else
         {
             Debug.LogError("✗ HTTPS connection: FAILED");
@@ -182,16 +207,15 @@ public class OpenAIRequest : MonoBehaviour
             Debug.LogError($"Response Code: {httpsTest.responseCode}");
         }
 
-
-        // 等待API密钥加载完成
+        // Wait a moment to ensure API key load completed
         yield return new WaitForSeconds(1f);
 
-        // 测试4: API密钥验证
+        // Test 3: API key validity
         if (!string.IsNullOrEmpty(apiKey))
         {
             Debug.Log("Testing API key validity...");
             UnityWebRequest keyTest = UnityWebRequest.Get("https://api.openai.com/v1/models");
-            keyTest.SetRequestHeader("Authorization", "Bearer " + apiKey);
+            keyTest.SetRequestHeader("Authorization", "Bearer " + apiKey.Trim());
             keyTest.timeout = 15;
             yield return keyTest.SendWebRequest();
 
@@ -218,6 +242,12 @@ public class OpenAIRequest : MonoBehaviour
 
     private string LoadPromptFromFile(string fileName)
     {
+        if (string.IsNullOrEmpty(basePath))
+        {
+            Debug.LogWarning("[OpenAIRequest] basePath is not set; cannot load prompts.");
+            return "";
+        }
+
         string filePath = Path.Combine(basePath, fileName);
         if (!File.Exists(filePath))
         {
@@ -227,15 +257,30 @@ public class OpenAIRequest : MonoBehaviour
         return File.ReadAllText(filePath);
     }
 
-    private void InitializePatientInstructions()
-    {
-        string baseInstructions = LoadPromptFromFile("baseInstructions.txt");
-        
-    }
-
     private void InitializeChat()
     {
+        // If basePath is missing, fall back to a minimal system prompt to avoid null chat
+        if (string.IsNullOrEmpty(basePath))
+        {
+            Debug.LogWarning("[OpenAIRequest] basePath not set; using minimal system prompt.");
+            chatMessages = new List<Dictionary<string, string>>
+            {
+                new Dictionary<string, string> { { "role", "system" }, { "content", "You are a patient. Keep replies concise. End with [0][0]." } }
+            };
+            return;
+        }
+
         string baseInstructions = LoadPromptFromFile("baseInstructions.txt");
+        if (string.IsNullOrEmpty(baseInstructions))
+        {
+            Debug.LogError("[OpenAIRequest] baseInstructions is empty; creating minimal system prompt.");
+            chatMessages = new List<Dictionary<string, string>>
+            {
+                new Dictionary<string, string> { { "role", "system" }, { "content", "You are a patient. Keep replies concise. End with [0][0]." } }
+            };
+            return;
+        }
+
         string emotionInstructions = @"
             IMPORTANT: You will analysis your emotion based on the conversation. Then end EVERY response with corresponding emotion codes:
             - Use [0] for neutral responses or statements
@@ -261,16 +306,14 @@ public class OpenAIRequest : MonoBehaviour
             - [7] for intense frustration when unable to express words
             - [8] for expressing impatience, agitation, or urging the doctor during conversation
             - [9] for struggling to recall words or thinking of a response";
-        
+
         string systemPrompt = $"{baseInstructions}\n{emotionInstructions}\n{motionInstructions}";
+
         chatMessages = new List<Dictionary<string, string>>
         {
-            new Dictionary<string, string>
-            {
-                { "role", "system" },
-                { "content", systemPrompt }
-            }
+            new Dictionary<string, string> { { "role", "system" }, { "content", systemPrompt } }
         };
+
         Debug.Log("System: " + systemPrompt);
     }
 
@@ -281,7 +324,10 @@ public class OpenAIRequest : MonoBehaviour
 
     private void NurseResponds(string nurseMessage, float speechWpm)
     {
-        chatMessages.Add(new Dictionary<string, string>() { { "role", "user" }, { "content", nurseMessage } });
+        if (chatMessages == null || chatMessages.Count == 0)
+            InitializeChat();
+
+        chatMessages.Add(new Dictionary<string, string> { { "role", "user" }, { "content", nurseMessage } });
         PrintChatMessage(chatMessages);
         currentSpeechSpeed = speechWpm;
         Debug.Log("speech speed:" + currentSpeechSpeed);
@@ -289,7 +335,8 @@ public class OpenAIRequest : MonoBehaviour
         StartCoroutine(PostRequest());
 
         // Evaluate nurse's response
-        ScoreManager.Instance.RecordTurn(currentPatientResponse, nurseMessage);
+        if (ScoreManager.Instance != null)
+            ScoreManager.Instance.RecordTurn(currentPatientResponse, nurseMessage);
     }
 
     IEnumerator PostRequest()
@@ -299,9 +346,7 @@ public class OpenAIRequest : MonoBehaviour
         Debug.Log($"API Key exists: {!string.IsNullOrEmpty(apiKey)}");
 
         if (!string.IsNullOrEmpty(apiKey))
-        {
             Debug.Log($"API Key preview: {apiKey.Substring(0, Math.Min(10, apiKey.Length))}...");
-        }
 
         if (currentSpeechSpeed > maxSpeechSpeed)
         {
@@ -319,19 +364,15 @@ public class OpenAIRequest : MonoBehaviour
         string requestBody = BuildRequestBody();
         Debug.Log($"Request Body Length: {requestBody.Length}");
 
-        // 使用UnityWebRequest.Post方法替代自定义创建
+        // Use UnityWebRequest.PostWwwForm to create a POST, then replace the body with JSON
         var request = UnityWebRequest.PostWwwForm(apiUrl, "");
-
-        // 手动设置请求体
         byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBody);
         request.uploadHandler = new UploadHandlerRaw(bodyRaw);
         request.downloadHandler = new DownloadHandlerBuffer();
 
-        // 设置请求头 - 简化版本
         request.SetRequestHeader("Content-Type", "application/json");
-        request.SetRequestHeader("Authorization", "Bearer " + apiKey);
+        request.SetRequestHeader("Authorization", "Bearer " + apiKey.Trim());
 
-        // 设置超时
         request.timeout = 45;
 
         Debug.Log("Sending request to OpenAI...");
@@ -352,7 +393,7 @@ public class OpenAIRequest : MonoBehaviour
             Debug.LogError($"Response Code: {request.responseCode}");
             Debug.LogError($"Response Body: {request.downloadHandler.text}");
 
-            // 如果还是421错误，尝试备用方案
+            // If 421 (misdirected request), try the alternative method
             if (request.responseCode == 421)
             {
                 Debug.LogWarning("Got 421 error, trying alternative request...");
@@ -371,10 +412,10 @@ public class OpenAIRequest : MonoBehaviour
                 var messageContent = jsonResponse["choices"][0]["message"]["content"].ToString();
                 Debug.Log($"Received message: {messageContent.Substring(0, Math.Min(100, messageContent.Length))}...");
 
-                var match = Regex.Match(messageContent, @"\[(\d+)\]\[(\d+)\]");
+                var match = EmotionMotionRegex.Match(messageContent);
                 if (!match.Success)
                 {
-                    Debug.LogWarning("No emotion code found in response");
+                    Debug.LogWarning("No emotion/motion codes found in response");
                     yield break;
                 }
 
@@ -403,24 +444,22 @@ public class OpenAIRequest : MonoBehaviour
         }
     }
 
-    // 备用请求方法
+    // Alternative POST method for certain edge-case HTTP errors
     private IEnumerator TryAlternativeRequest(string requestBody)
     {
         Debug.Log("=== TRYING ALTERNATIVE REQUEST METHOD ===");
 
-        // 尝试使用WWWForm方法
         var form = new WWWForm();
         form.AddField("data", requestBody);
 
         var request = UnityWebRequest.Post(apiUrl, form);
 
-        // 重新设置为JSON请求
+        // Replace body with JSON
         request.uploadHandler.Dispose();
         request.uploadHandler = new UploadHandlerRaw(Encoding.UTF8.GetBytes(requestBody));
 
-        // 重新设置请求头
         request.SetRequestHeader("Content-Type", "application/json");
-        request.SetRequestHeader("Authorization", "Bearer " + apiKey);
+        request.SetRequestHeader("Authorization", "Bearer " + apiKey.Trim());
         request.SetRequestHeader("User-Agent", "UnityPlayer");
 
         request.timeout = 45;
@@ -438,7 +477,7 @@ public class OpenAIRequest : MonoBehaviour
                 var jsonResponse = JObject.Parse(request.downloadHandler.text);
                 var messageContent = jsonResponse["choices"][0]["message"]["content"].ToString();
 
-                var match = Regex.Match(messageContent, @"\[(\d+)\]\[(\d+)\]");
+                var match = EmotionMotionRegex.Match(messageContent);
                 if (match.Success && emotionController != null)
                 {
                     int emotionCode = int.Parse(match.Groups[1].Value);
@@ -489,7 +528,7 @@ public class OpenAIRequest : MonoBehaviour
                 break;
         }
 
-        errorDetails += "\nTROUBLESHOoting STEPS:\n";
+        errorDetails += "\nTROUBLESHOOTING STEPS:\n";
         errorDetails += "1. Check your internet connection\n";
         errorDetails += "2. Verify your API key is correct\n";
         errorDetails += "3. Try running the application as administrator\n";
@@ -503,26 +542,23 @@ public class OpenAIRequest : MonoBehaviour
     {
         currentPatientResponse = responseText; // for scoring
 
-        chatMessages.Add(new Dictionary<string, string>() { { "role", "assistant" }, { "content", responseText } });
+        chatMessages.Add(new Dictionary<string, string> { { "role", "assistant" }, { "content", responseText } });
         PrintChatMessage(chatMessages);
 
         if (TTSManager.Instance != null)
-        {
             TTSManager.Instance.ConvertTextToSpeech(responseText);
-        }
         else
-        {
             Debug.LogError("TTSManager instance not found.");
-        }
 
         if (emotionController != null)
-        {
             emotionController.HandleEmotionCode(emotionCode, motionCode);
-        }
     }
 
     private string BuildRequestBody()
     {
+        if (chatMessages == null || chatMessages.Count == 0)
+            InitializeChat();
+
         var requestObject = new
         {
             model = "gpt-4o-2024-08-06",
@@ -534,17 +570,16 @@ public class OpenAIRequest : MonoBehaviour
 
     public static void PrintChatMessage(List<Dictionary<string, string>> messages)
     {
-        if (messages.Count == 0)
-            return;
+        if (messages.Count == 0) return;
 
         var latestMessage = messages[messages.Count - 1];
         string role = latestMessage["role"];
         string content = latestMessage["content"];
 
-        // Extract emotion code if present
+        // Extract emotion/motion codes if present
         string emotionCode = "";
         string motionCode = "";
-        var match = Regex.Match(content, @"\[(\d+)\]\[(\d+)\]");
+        var match = EmotionMotionRegex.Match(content);
         if (match.Success)
         {
             emotionCode = $" (Emotion: {match.Groups[1].Value})";
