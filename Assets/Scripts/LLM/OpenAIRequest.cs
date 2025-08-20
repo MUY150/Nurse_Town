@@ -417,28 +417,35 @@ public class OpenAIRequest : MonoBehaviour
                 var jsonResponse = JObject.Parse(request.downloadHandler.text);
                 var messageContent = jsonResponse["choices"][0]["message"]["content"].ToString();
                 Debug.Log($"Received message: {messageContent.Substring(0, Math.Min(100, messageContent.Length))}...");
-
+            
                 var match = EmotionMotionRegex.Match(messageContent);
-                if (!match.Success)
-                {
-                    Debug.LogWarning("No emotion/motion codes found in response");
-                    yield break;
-                }
+                string ttsText = messageContent;
+                
+                int emotionCode;
+                int motionCode;
 
                 if (emotionController == null)
                 {
                     Debug.LogError("EmotionController is null");
                     yield break;
                 }
-
-                int emotionCode = int.Parse(match.Groups[1].Value);
-                int motionCode = int.Parse(match.Groups[2].Value);
-                Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
-
-                string ttsText = messageContent.Substring(0, messageContent.Length - 6).Trim();
-                Debug.Log($"TTS Text: {ttsText}");
-                    
+                if (!match.Success)
+                {
+                    Debug.LogWarning("No emotion/motion codes found in alternative response, using defaults");
+                    emotionCode = 0;
+                    motionCode = 0;
+                }
+                else
+                {
+                    emotionCode = int.Parse(match.Groups[1].Value);
+                    motionCode = int.Parse(match.Groups[2].Value);
+                    Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
+                    ttsText = messageContent.Substring(0, messageContent.Length - 6).Trim();
+                    Debug.Log($"TTS Text: {ttsText}");
+                }
+                
                 HandlePatientResponse(ttsText, emotionCode, motionCode);
+                
             }
             catch (Exception e)
             {
@@ -487,17 +494,32 @@ public class OpenAIRequest : MonoBehaviour
                 var messageContent = jsonResponse["choices"][0]["message"]["content"].ToString();
 
                 var match = EmotionMotionRegex.Match(messageContent);
-                if (match.Success && emotionController != null)
+                string ttsText = messageContent;
+                
+                int emotionCode;
+                int motionCode;
+
+                if (emotionController == null)
                 {
-                    int emotionCode = int.Parse(match.Groups[1].Value);
-                    int motionCode = int.Parse(match.Groups[2].Value);
-                    Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
-                    
-                    string ttsText = messageContent.Substring(0, messageContent.Length - 6).Trim();
-                    Debug.Log($"TTS Text: {ttsText}");
-                    
-                    HandlePatientResponse(ttsText, emotionCode, motionCode);
+                    Debug.LogError("EmotionController is null");
+                    yield break;
                 }
+                if (!match.Success)
+                {
+                    Debug.LogWarning("No emotion/motion codes found in alternative response, using defaults");
+                    emotionCode = 0;
+                    motionCode = 0;
+                }
+                else
+                {
+                    emotionCode = int.Parse(match.Groups[1].Value);
+                    motionCode = int.Parse(match.Groups[2].Value);
+                    Debug.Log($"Extracted emotion code: {emotionCode}, motion code: {motionCode}");
+                    ttsText = messageContent.Substring(0, messageContent.Length - 6).Trim();
+                    Debug.Log($"TTS Text: {ttsText}");
+                }
+                
+                HandlePatientResponse(ttsText, emotionCode, motionCode);
             }
             catch (Exception e)
             {
