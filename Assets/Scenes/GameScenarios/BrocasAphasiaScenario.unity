@@ -634,8 +634,12 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 85079553}
     - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+      propertyPath: disableMotion
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: setMotionCode
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: setEmotionCode
@@ -643,7 +647,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: currentMotionCode
-      value: 8
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4025528995871399932, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
       propertyPath: currentEmotionCode
@@ -2525,7 +2529,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1120805673}
   m_Direction: 2
   m_Value: 0.9999999
-  m_Size: 0.18859993
+  m_Size: 0.094299965
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -4766,7 +4770,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.5004, y: 471.50037}
+  m_AnchoredPosition: {x: -331.5001, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -6077,8 +6081,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 175523163}
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
-  m_Value: 0.000012565972
-  m_Size: 0.97499985
+  m_Value: -0.0000017951323
+  m_Size: 0.487498
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
