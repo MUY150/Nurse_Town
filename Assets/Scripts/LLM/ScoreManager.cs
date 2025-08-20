@@ -339,8 +339,20 @@ public class ScoreManager : MonoBehaviour
             DisplayOriginalFormat(evaluation);
         }
 
+        // 保存评估到AWS数据库
+        if (AWSAPIConnector.Instance != null)
+        {
+            Debug.Log("💾 Saving evaluation to AWS database...");
+            AWSAPIConnector.Instance.SaveEvaluationFromScoreManager(evaluation);
+        }
+        else
+        {
+            Debug.LogWarning("AWSAPIConnector instance not found - evaluation not saved to database");
+        }
+
         StartCoroutine(RefreshScrollViewLayout());
     }
+
     private void DisplayOriginalFormat(DynamicEvaluationResult evaluation)
     {
         StringBuilder reportContent = new StringBuilder();
@@ -430,6 +442,12 @@ public class ScoreManager : MonoBehaviour
     public bool CanViewReport()
     {
         return true;
+    }
+
+    // 获取对话轮次数据，供AWS连接器使用
+    public List<ConversationTurn> GetConversationTurns()
+    {
+        return conversationTurns;
     }
 }
 

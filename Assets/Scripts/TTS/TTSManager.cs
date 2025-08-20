@@ -200,6 +200,8 @@ public class TTSManager : MonoBehaviour
 
         Debug.Log($"TTS Manager: Processing text: '{text}'");
 
+        Debug.Log($"TTS Manager: Processing text: '{ttsText}'");
+
         // Get audio data from ElevenLabs TTS service
         (byte[] audioData, List<WordTiming> wordTimings) = await GetElevenLabsTTSAudio(
             text,

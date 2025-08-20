@@ -19,9 +19,11 @@ public class CameraClipboardController : MonoBehaviour
     public AnimationCurve transitionCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     [Header("UI References")]
-    public Button finishButton;             // Finish按钮
     public GameObject clipboardReport;      // clipboard报告对象
     public GameObject subtitleUI;           // 字幕UI对象
+
+    [Header("Integration")]
+    public ChecklistManager checklistManager; // checklist管理器的引用
 
     private static CameraClipboardController instance;
     public static CameraClipboardController Instance
@@ -63,16 +65,10 @@ public class CameraClipboardController : MonoBehaviour
         if (clipboardReport != null)
             clipboardReport.SetActive(false);
 
-        // 设置Finish按钮点击事件
-        if (finishButton != null)
+        // 自动找到ChecklistManager如果没有手动设置
+        if (checklistManager == null)
         {
-            finishButton.onClick.AddListener(OnFinishButtonClicked);
-            finishButton.gameObject.SetActive(true); // 确保按钮一直显示
-            Debug.Log("Finish按钮已设置并激活");
-        }
-        else
-        {
-            Debug.LogError("Finish按钮未分配！请在Inspector中分配finishButton");
+            checklistManager = FindObjectOfType<ChecklistManager>();
         }
     }
 
@@ -99,14 +95,12 @@ public class CameraClipboardController : MonoBehaviour
         }
     }
 
-    // Finish按钮点击事件
-    private void OnFinishButtonClicked()
+    // 公共方法：由ChecklistManager调用以触发clipboard视图
+    public void TriggerClipboardView()
     {
-        Debug.Log("Finish按钮被点击");
-
         if (!isViewingClipboard)
         {
-            Debug.Log("玩家选择完成，开始切换摄像机到clipboard视角并直接生成评估报告");
+            Debug.Log("ChecklistManager触发了clipboard视图切换");
 
             // 获取ScoreManager用于评估
             ScoreManager scoreManager = ScoreManager.Instance;
@@ -125,7 +119,7 @@ public class CameraClipboardController : MonoBehaviour
             else
             {
                 Debug.Log("找到ScoreManager，开始切换视角并生成报告");
-                // 切换视角的同时启动评估 - 这是关键！
+                // 切换视角的同时启动评估
                 StartCoroutine(SwitchToClipboardAndEvaluate(scoreManager));
             }
         }
@@ -170,13 +164,6 @@ public class CameraClipboardController : MonoBehaviour
         Debug.Log("开始切换到clipboard视角");
 
         isViewingClipboard = true;
-
-        // 隐藏Finish按钮
-        if (finishButton != null)
-        {
-            finishButton.gameObject.SetActive(false);
-            Debug.Log("隐藏Finish按钮");
-        }
 
         // 隐藏字幕UI（强制隐藏所有子对象）
         if (subtitleUI != null)
@@ -269,15 +256,25 @@ public class CameraClipboardController : MonoBehaviour
         mainCamera.transform.position = originalPosition;
         mainCamera.transform.rotation = originalRotation;
 
-        // 重新显示Finish按钮
-        if (finishButton != null)
-        {
-            finishButton.gameObject.SetActive(true);
-            Debug.Log("重新显示Finish按钮");
-        }
-
         isViewingClipboard = false;
         Debug.Log("返回原始视角完成");
+
+        // 重要：返回主视角时重置checklist
+        ResetChecklist();
+    }
+
+    private void ResetChecklist()
+    {
+        if (checklistManager != null)
+        {
+            checklistManager.ShowCheckListPanel(); // 重新显示CheckList面板
+            checklistManager.ResetAllTogglesPublic(); // 重置Toggle状态
+            Debug.Log("已重新显示CheckListPanel并重置checklist状态");
+        }
+        else
+        {
+            Debug.LogWarning("ChecklistManager引用为空，无法重置checklist");
+        }
     }
 
     // 检查当前是否在查看clipboard
@@ -318,11 +315,5 @@ public class CameraClipboardController : MonoBehaviour
         }
 
         Debug.Log($"完全显示了 {subtitleObj.name} 及其 {subtitleObj.transform.childCount} 个子对象");
-    }
-
-    // 可选：公共方法供外部调用触发切换
-    public void TriggerClipboardView()
-    {
-        OnFinishButtonClicked();
     }
 }

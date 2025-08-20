@@ -1,13 +1,16 @@
-﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Text.RegularExpressions;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.Text;
+using Newtonsoft.Json.Linq;
+using System;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 public class OpenAIRequest : MonoBehaviour
 {
@@ -37,6 +40,7 @@ public class OpenAIRequest : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
+            // Uncomment if you want this object to persist across scenes
             // DontDestroyOnLoad(gameObject);
         }
         else
@@ -66,6 +70,7 @@ public class OpenAIRequest : MonoBehaviour
             System.Net.ServicePointManager.UseNagleAlgorithm = false;
 
             Debug.Log("DEV SSL/TLS overrides configured");
+            Debug.Log("✓ Enhanced SSL/TLS settings configured");
         }
         catch (Exception e)
         {
@@ -216,6 +221,7 @@ public class OpenAIRequest : MonoBehaviour
             Debug.Log("Testing API key validity...");
             UnityWebRequest keyTest = UnityWebRequest.Get("https://api.openai.com/v1/models");
             keyTest.SetRequestHeader("Authorization", "Bearer " + apiKey.Trim());
+            //keyTest.SetRequestHeader("Authorization", "Bearer " + apiKey);
             keyTest.timeout = 15;
             yield return keyTest.SendWebRequest();
 
@@ -594,5 +600,60 @@ public class OpenAIRequest : MonoBehaviour
         }
 
         Debug.Log($"[{role.ToUpper()}]{emotionCode}{motionCode}\n{content}\n");
+    }
+}
+        
+
+    // =================
+    // AWS集成相关的公共方法
+    // =================
+
+    // 获取聊天消息的公共方法
+    public List<Dictionary<string, string>> GetChatMessages()
+    {
+        return chatMessages;
+    }
+
+    // 保存当前对话到AWS的方法（现在不做任何操作，等待report生成时一起发送）
+    public void SaveConversationToAWS()
+    {
+        // 不再立即保存，等待evaluation report生成时一起发送
+        Debug.Log("🔄 Conversation will be saved with evaluation report");
+    }
+
+    // =================
+    // 手动触发保存的方法（用于测试）
+    // =================
+
+    [ContextMenu("Debug Chat Messages")]
+    public void DebugChatMessages()
+    {
+        Debug.Log($"=== CHAT MESSAGES DEBUG ({chatMessages?.Count ?? 0} messages) ===");
+        if (chatMessages != null)
+        {
+            for (int i = 0; i < chatMessages.Count; i++)
+            {
+                var msg = chatMessages[i];
+                Debug.Log($"{i}: [{msg["role"]}] {msg["content"]}");
+            }
+        }
+        else
+        {
+            Debug.Log("Chat messages is null");
+        }
+    }
+
+    [ContextMenu("Test Save Current Conversation")]
+    public void TestSaveCurrentConversation()
+    {
+        if (AWSAPIConnector.Instance != null && chatMessages != null && chatMessages.Count > 0)
+        {
+            Debug.Log("🧪 Testing immediate chat history save...");
+            AWSAPIConnector.Instance.SaveChatHistory(chatMessages);
+        }
+        else
+        {
+            Debug.LogWarning("Cannot test save: missing components or no chat messages");
+        }
     }
 }
