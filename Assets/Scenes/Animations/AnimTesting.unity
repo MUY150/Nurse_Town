@@ -733,9 +733,7 @@ PrefabInstance:
       propertyPath: m_Name
       value: Humano_Aphasia
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 8029278226265144562, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
-    - {fileID: 1380561229037756327, guid: da9dbf664a1ca9548b970686b74da42e, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:
@@ -4773,7 +4771,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.49997, y: 471.50037}
+  m_AnchoredPosition: {x: -331.50015, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -6074,7 +6072,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
   m_Value: -0.0000017951323
-  m_Size: 0.4875127
+  m_Size: 0.487498
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -8254,10 +8252,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac37491d7e2b33f4197f0f3759382132, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  evaluationCanvas: {fileID: 0}
-  reportText: {fileID: 0}
-  closeButton: {fileID: 0}
-  progressBarUI: {fileID: 0}
+  evaluationCanvas: {fileID: 1100157944}
+  reportText: {fileID: 333830809}
+  closeButton: {fileID: 1954227787}
+  progressBarUI: {fileID: 2076932622}
 --- !u!4 &1397519268
 Transform:
   m_ObjectHideFlags: 0

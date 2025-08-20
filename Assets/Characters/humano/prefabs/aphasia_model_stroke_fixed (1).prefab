@@ -1717,13 +1717,7 @@ PrefabInstance:
       addedObject: {fileID: 4567796559292907059}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b26b8aafa335f4f229008027ac838bd4, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 305399680854982820}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b26b8aafa335f4f229008027ac838bd4, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 6668925248582050730}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: b26b8aafa335f4f229008027ac838bd4, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 8681242962620195825}
   m_SourcePrefab: {fileID: 100100000, guid: b26b8aafa335f4f229008027ac838bd4, type: 3}
 --- !u!137 &4062513801542246115 stripped
 SkinnedMeshRenderer:
@@ -2159,21 +2153,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   transcriptText: {fileID: 0}
---- !u!114 &305399680854982820
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8068719081323617958}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3c429ac217b364750aad5bbe98d6bd92, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  apiUrl: https://api.openai.com/v1/chat/completions
-  apiKey: 
-  currentScenario: brocaAphasia
 --- !u!114 &6668925248582050730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2189,8 +2168,10 @@ MonoBehaviour:
   director: {fileID: 0}
   animator: {fileID: 7918357289444049983}
   setEmotionCode: 1
+  setMotionCode: 0
   disableMotion: 0
   currentEmotionCode: 6
+  currentMotionCode: 0
   emotionNames:
   - Neutral
   - Discomfort
@@ -2200,15 +2181,14 @@ MonoBehaviour:
   - Anger
   - Frustrated
   - Thinking
---- !u!114 &8681242962620195825
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8068719081323617958}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ac37491d7e2b33f4197f0f3759382132, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  motionNames:
+  - Neutral
+  - Confused
+  - Nod 1
+  - Nod 2
+  - Nod 3
+  - Nod 4
+  - Head Shake 1
+  - Head Shake 2
+  - Tap Table
+  - Struggling
