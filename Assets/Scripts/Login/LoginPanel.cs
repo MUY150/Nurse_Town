@@ -243,7 +243,7 @@ public class LoginPanel : MonoBehaviour
                 message = "Invalid username or password.";
                 break;
             case 403:
-                message = $"You have completed all simulations{FormatCurrentStep(err?.currentStep)}.";
+                message = "You have completed all simulations. Please head to post survey.";
                 break;
             case 0:
                 message = $"Network error. {transportError ?? "Check your connection."}";

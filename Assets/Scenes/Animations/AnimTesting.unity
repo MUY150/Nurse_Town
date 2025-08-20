@@ -4771,7 +4771,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.50003, y: 471.50037}
+  m_AnchoredPosition: {x: -331.5004, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -6071,8 +6071,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 175523163}
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
-  m_Value: -0.0000017951323
-  m_Size: 0.487498
+  m_Value: 0.000012565972
+  m_Size: 0.48751202
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -10760,6 +10760,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4477224011194899492, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6302155294781954893, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
       propertyPath: m_Name
       value: LoginCanvas
@@ -10843,6 +10847,22 @@ PrefabInstance:
     - target: {fileID: 8487925798477965746, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8888547531866055598, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8888547531866055598, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
+      propertyPath: m_Color.b
+      value: 0.9607843
+      objectReference: {fileID: 0}
+    - target: {fileID: 8888547531866055598, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
+      propertyPath: m_Color.g
+      value: 0.95686275
+      objectReference: {fileID: 0}
+    - target: {fileID: 8888547531866055598, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
+      propertyPath: m_Color.r
+      value: 0.8666667
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
