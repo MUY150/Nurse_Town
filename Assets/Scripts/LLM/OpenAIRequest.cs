@@ -601,8 +601,7 @@ public class OpenAIRequest : MonoBehaviour
 
         Debug.Log($"[{role.ToUpper()}]{emotionCode}{motionCode}\n{content}\n");
     }
-}
-        
+       
 
     // =================
     // AWS集成相关的公共方法
