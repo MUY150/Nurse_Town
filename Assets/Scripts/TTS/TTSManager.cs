@@ -197,10 +197,11 @@ public class TTSManager : MonoBehaviour
 
         // Strip emotion code for TTS but keep original text for animation
         string ttsText = text;
+        //Regex.Replace(ttsText, @"\[\d+\]", "");
         Match match = Regex.Match(text, @"\[([0-9]|10)\]$");
         if (match.Success)
         {
-            ttsText = text.Substring(0, text.Length - 3).Trim();
+            ttsText = text.Substring(0, text.Length - 6).Trim();
         }
 
         Debug.Log($"TTS Manager: Processing text: '{ttsText}'");
