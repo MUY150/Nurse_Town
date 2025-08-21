@@ -2176,6 +2176,53 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 557574939478112185, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -225
+      objectReference: {fileID: 0}
+    - target: {fileID: 618929017203470645, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -310
+      objectReference: {fileID: 0}
+    - target: {fileID: 912431178952503450, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "2. Use of Supported Conversation Techniques\n    - Speak slowly and
+        clearly.  \n    - Use short, simple sentences.  \n    - Give extra time for
+        the patient to respond.  "
+      objectReference: {fileID: 0}
+    - target: {fileID: 2298466979732790710, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -400
+      objectReference: {fileID: 0}
+    - target: {fileID: 2437341059390155078, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "1. Greeting and Professional Introduction\n    -  Greet patient by
+        name\n    -  State your role clearly\n    -  Explain session purpose simply"
+      objectReference: {fileID: 0}
+    - target: {fileID: 2529063276699682171, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -560
+      objectReference: {fileID: 0}
+    - target: {fileID: 2875956960089128492, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "8. Session Closure\n    - Summarize what you did today.  \n    - Offer
+        positive feedback and encouragement.  \n    - Thank the patient and close
+        the interaction respectfully.  "
+      objectReference: {fileID: 0}
+    - target: {fileID: 3427597364048483155, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -490
+      objectReference: {fileID: 0}
+    - target: {fileID: 3542403390485363825, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "5. Repetition Tasks\n    - Repeat single-syllable words with the patient. 
+        \n    - Practice short phrases or simple sentences.  \n    - Give clear models
+        and allow time to respond.  "
+      objectReference: {fileID: 0}
+    - target: {fileID: 4384400929440541998, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -138
+      objectReference: {fileID: 0}
     - target: {fileID: 4482871749718348455, guid: c111eae451049bd4c97c941fa1778376, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -2256,9 +2303,41 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5506862899937282497, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "4. Automatic Speech Tasks\n    - Count from 1\u201320 together.  \n   
+        - Recite days of the week or months of the year.  \n    - Allow time for
+        responses."
+      objectReference: {fileID: 0}
+    - target: {fileID: 6709520675208903195, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_text
+      value: 'Tasks
+
+'
+      objectReference: {fileID: 0}
+    - target: {fileID: 6926716001451821813, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "7. Word Filling or Sentence Completion Tasks\n    - Fill in the blak
+        for familiar phrases \n    \u2013 e.g. \u201CSalt and ____\u201D \u2192 \u201Cpepper\u201D"
+      objectReference: {fileID: 0}
+    - target: {fileID: 7374811484437766057, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "6. Responsive Naming Tasks\n    - Ask simple, clear naming questions
+        \n    \u2013 e.g. \u201CWhat do you eat with?\u201D \u2192 \u201CSpoon\u201D"
+      objectReference: {fileID: 0}
     - target: {fileID: 7609667334373752767, guid: c111eae451049bd4c97c941fa1778376, type: 3}
       propertyPath: m_Name
       value: UI
+      objectReference: {fileID: 0}
+    - target: {fileID: 7915424712273074426, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -625
+      objectReference: {fileID: 0}
+    - target: {fileID: 8179346248094776619, guid: c111eae451049bd4c97c941fa1778376, type: 3}
+      propertyPath: m_Text
+      value: "3. Case History Questions\n    - Ask clear yes/no questions.  \n   
+        - Use simple WH- questions (who, what, where, when).  \n    - Confirm or
+        repeat back key information to ensure accuracy.  "
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2529,7 +2608,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1120805673}
   m_Direction: 2
   m_Value: 0.9999999
-  m_Size: 0.18859993
+  m_Size: 0.094299965
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -4770,7 +4849,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -331.50015, y: 471.50037}
+  m_AnchoredPosition: {x: -331.5002, y: 471.50037}
   m_SizeDelta: {x: 680, y: 5000}
   m_Pivot: {x: 0, y: 1}
 --- !u!4 &730950017 stripped
@@ -6138,8 +6217,8 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 175523163}
   m_HandleRect: {fileID: 175523162}
   m_Direction: 0
-  m_Value: -0.0000017951323
-  m_Size: 0.9749997
+  m_Value: 0.000012565972
+  m_Size: 0.48749802
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -10571,6 +10650,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3834509274003941744, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3834509274003941744, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
+      propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3834509274003941744, guid: 09fbaf0227c744f09a702e143a984f49, type: 3}
