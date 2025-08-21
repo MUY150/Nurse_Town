@@ -122,7 +122,7 @@ public class SpeechToTextController2 : MonoBehaviour
     {
         if (!isRecording)
         {
-            recordedClip = Microphone.Start(null, false, 10, 44100);
+            recordedClip = Microphone.Start(null, false, 30, 44100);
             isRecording = true;
             Debug.Log("STT: Started recording...");
         }
