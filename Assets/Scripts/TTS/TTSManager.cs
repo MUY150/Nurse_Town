@@ -129,6 +129,17 @@ public class TTSManager : MonoBehaviour
         }
     }
 
+    public void ApplyLoginContext(string userId, int simulationLevel)
+    {
+        switch (simulationLevel)
+        {
+            case 1: voiceId = "QXFI3J7JB0fOlMwKDUxE"; break;
+            case 2: voiceId = "KjIBD4QnlzAqKHmoYfdZ"; break;
+            case 3: voiceId = "nlPFgtYJ0K18Hij3YdiX"; break;
+        }
+        Debug.Log($"[TTSManager] voiceId set to '{voiceId}' for simulationLevel={simulationLevel} (userId={userId}).");
+    }
+
     // 新的API密钥加载方法
     private void LoadElevenLabsApiKey()
     {

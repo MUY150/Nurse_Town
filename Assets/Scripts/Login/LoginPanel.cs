@@ -207,6 +207,17 @@ public class LoginPanel : MonoBehaviour
             OnLoginSucceededWithLevel?.Invoke(ok.simulationLevel);
             OnLoginSucceededWithUserId?.Invoke(ok.userID ?? string.Empty);
 
+            // Pass both userID and simulationLevel to TTSManager, AWSAPI, OpenAI
+            var tts = TTSManager.Instance ?? FindObjectOfType<TTSManager>();
+            if (tts != null)
+            {
+                tts.ApplyLoginContext(ok.userID, ok.simulationLevel);
+            }
+            else
+            {
+                Debug.LogWarning("[LoginPanel] TTSManager not found in scene; skipping ApplyLoginContext.");
+            }
+
             var aws = AWSAPIConnector.Instance ?? FindObjectOfType<AWSAPIConnector>();
             if (aws != null)
             {
