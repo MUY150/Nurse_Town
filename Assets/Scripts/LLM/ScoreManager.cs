@@ -20,7 +20,7 @@ public class ScoreManager : MonoBehaviour
     public Button closeButton;
 
     [Header("Progress Bar")]
-    public MedicalProgressBarUI progressBarUI; // 引用进度条UI管理器
+    public MedicalProgressBarUI progressBarUI;
 
     private string scoringPrompt = "";
     private string currentScenario = "";
@@ -36,11 +36,9 @@ public class ScoreManager : MonoBehaviour
 
     void Start()
     {
-        // 初始化时隐藏评估界面
         if (evaluationCanvas != null)
             evaluationCanvas.gameObject.SetActive(false);
 
-        // 绑定关闭按钮事件
         if (closeButton != null)
             closeButton.onClick.AddListener(HideEvaluationPanel);
     }
@@ -85,36 +83,28 @@ public class ScoreManager : MonoBehaviour
 
         Debug.Log($"开始生成评估报告，共有 {conversationTurns.Count} 轮对话");
 
-        // 显示进度条
         if (progressBarUI != null)
             progressBarUI.ShowProgressBar();
 
-        // 开始评估协程
         StartCoroutine(EvaluateFullConversationCoroutine());
     }
 
     private void CreateNoConversationReport()
     {
-        // 确保进度条隐藏
         if (progressBarUI != null)
             progressBarUI.HideProgressBar();
 
-        // 显示评估界面
         if (evaluationCanvas != null)
             evaluationCanvas.gameObject.SetActive(true);
 
         StringBuilder reportContent = new StringBuilder();
-        reportContent.AppendLine("Evaluation Report");
-        reportContent.AppendLine();
-        reportContent.AppendLine("No Conversation Recorded");
-        reportContent.AppendLine();
-        reportContent.AppendLine("It appears that no conversation turns have been recorded during this session.");
-        reportContent.AppendLine();
+        reportContent.AppendLine("Evaluation Report\n");
+        reportContent.AppendLine("No Conversation Recorded\n");
+        reportContent.AppendLine("It appears that no conversation turns have been recorded during this session.\n");
         reportContent.AppendLine("To receive a proper evaluation, please:");
         reportContent.AppendLine("• Engage in conversation with the patient");
         reportContent.AppendLine("• Complete at least a few dialogue exchanges");
-        reportContent.AppendLine("• Then click the Finish button to generate your assessment");
-        reportContent.AppendLine();
+        reportContent.AppendLine("• Then click the Finish button to generate your assessment\n");
         reportContent.AppendLine("Please start a new conversation and try again.");
 
         if (reportText != null)
@@ -128,40 +118,32 @@ public class ScoreManager : MonoBehaviour
 
     private void DisplayErrorReport(string rawContent, string errorMessage)
     {
-        // 隐藏进度条
+        Debug.LogError($"[ScoreManager] Report generation issue: {errorMessage}");
+        string contentPreview;
+        if (string.IsNullOrEmpty(rawContent))
+        {
+            contentPreview = "<empty>";
+        }
+        else
+        {
+            int previewLen = Mathf.Min(500, rawContent.Length);
+            contentPreview = rawContent.Substring(0, previewLen) + (rawContent.Length > previewLen ? "..." : "");
+        }
+        Debug.Log($"[AI Raw Content Preview] {contentPreview}");
+
         if (progressBarUI != null)
             progressBarUI.HideProgressBar();
 
-        // 显示评估界面
         if (evaluationCanvas != null)
             evaluationCanvas.gameObject.SetActive(true);
 
-        StringBuilder reportContent = new StringBuilder();
-        reportContent.AppendLine("Evaluation Report - Error");
-        reportContent.AppendLine();
-        reportContent.AppendLine("❌ Report Generation Failed");
-        reportContent.AppendLine();
-        reportContent.AppendLine("An error occurred while generating your evaluation report.");
-        reportContent.AppendLine();
-        reportContent.AppendLine("Technical Details:");
-        reportContent.AppendLine($"Error: {errorMessage}");
-        reportContent.AppendLine();
-        reportContent.AppendLine("AI Response Preview:");
-        reportContent.AppendLine("---");
-
-        string contentPreview = rawContent.Length > 500 ? rawContent.Substring(0, 500) + "..." : rawContent;
-        reportContent.AppendLine(contentPreview);
-        reportContent.AppendLine("---");
-        reportContent.AppendLine();
-        reportContent.AppendLine("Please try again or contact support if the problem persists.");
-
         if (reportText != null)
         {
-            reportText.text = reportContent.ToString();
+            reportText.text =
+                "Evaluation Report\n\n" +
+                "Your report is being generated. This may take a moment. You can view your results on our website.";
             StartCoroutine(RefreshScrollViewLayout());
         }
-
-        Debug.Log("显示错误报告给用户");
     }
 
     private IEnumerator EvaluateFullConversationCoroutine()
@@ -174,7 +156,6 @@ public class ScoreManager : MonoBehaviour
             yield break;
         }
 
-        // 更新进度：准备数据
         if (progressBarUI != null)
             progressBarUI.UpdateProgress(0.1f, "Analyzing patient conversation...");
         yield return new WaitForSeconds(0.5f);
@@ -188,28 +169,53 @@ public class ScoreManager : MonoBehaviour
             conversationBuilder.AppendLine();
         }
 
-        // 更新进度：构建请求
         if (progressBarUI != null)
             progressBarUI.UpdateProgress(0.3f, "Preparing clinical assessment...");
         yield return new WaitForSeconds(0.3f);
 
-        string fullPrompt = $"{scoringPrompt}\n\nNow analyze the following full simulated conversation between the patient and nursing student:\n{conversationBuilder}";
-        Debug.Log($"Prompt length: {fullPrompt.Length} characters");
+        string userPrompt = $"Now analyze the following full simulated conversation between the patient and a SLP student:\n\n{conversationBuilder}";
+
+        Debug.Log($"Prompt length: {scoringPrompt.Length + userPrompt.Length} characters");
 
         var requestBody = new
         {
-            model = "gpt-4",
+            model = "gpt-4o-2024-08-06",
             messages = new List<Dictionary<string, string>>()
             {
-                new Dictionary<string, string>() { { "role", "user" }, { "content", fullPrompt } }
+                new Dictionary<string, string>() { { "role", "system" }, { "content", scoringPrompt } },
+                new Dictionary<string, string>() { { "role", "user" }, { "content", userPrompt } }
             },
-            temperature = 0.0,
-            max_tokens = 1500
+            temperature = 0.3,
+            max_tokens = 3000,
+            response_format = new { type = "json_schema", json_schema = new {
+                name = "evaluation_schema",
+                schema = new {
+                    type = "object",
+                    properties = new {
+                        criteria = new {
+                            type = "array",
+                            items = new {
+                                type = "object",
+                                properties = new {
+                                    name = new { type = "string" },
+                                    score = new { type = "integer" },
+                                    maxScore = new { type = "integer" },
+                                    explanation = new { type = "string" }
+                                },
+                                required = new[] { "name", "score", "maxScore", "explanation" }
+                            }
+                        },
+                        totalScore = new { type = "integer" },
+                        performanceLevel = new { type = "string" },
+                        overallExplanation = new { type = "string" }
+                    },
+                    required = new[] { "criteria", "totalScore", "performanceLevel", "overallExplanation" }
+                }
+            }}
         };
 
         string jsonBody = JsonConvert.SerializeObject(requestBody);
 
-        // 更新进度：发送请求
         if (progressBarUI != null)
             progressBarUI.UpdateProgress(0.5f, "Consulting evaluation system...");
         yield return new WaitForSeconds(0.2f);
@@ -223,7 +229,6 @@ public class ScoreManager : MonoBehaviour
 
         Debug.Log("Submitting full conversation for evaluation...");
 
-        // 开始网络请求，同时更新进度
         var operation = request.SendWebRequest();
 
         float requestStartTime = Time.time;
@@ -244,16 +249,13 @@ public class ScoreManager : MonoBehaviour
             yield break;
         }
 
-        // 更新进度：处理响应
         if (progressBarUI != null)
             progressBarUI.UpdateProgress(0.9f, "Compiling assessment report...");
         yield return new WaitForSeconds(0.3f);
 
-        // 将JSON解析和处理分离到非协程方法中
         yield return StartCoroutine(ProcessAIResponse(request.downloadHandler.text));
     }
 
-    // 新的协程方法来处理AI响应
     private IEnumerator ProcessAIResponse(string responseText)
     {
         Debug.Log("=== OpenAI原始响应 ===");
@@ -261,16 +263,13 @@ public class ScoreManager : MonoBehaviour
         Debug.Log($"完整响应内容: {responseText}");
         Debug.Log("==================");
 
-        // 完成进度
         if (progressBarUI != null)
             progressBarUI.UpdateProgress(1.0f, "Finalizing evaluation...");
         yield return new WaitForSeconds(0.5f);
 
-        // 在非协程方法中处理JSON解析和错误处理
         ProcessEvaluationResult(responseText);
     }
 
-    // 非协程方法处理JSON解析
     private void ProcessEvaluationResult(string responseText)
     {
         try
@@ -285,20 +284,17 @@ public class ScoreManager : MonoBehaviour
 
             var evaluation = JsonConvert.DeserializeObject<DynamicEvaluationResult>(responseContent);
 
-            // 隐藏进度条
             if (progressBarUI != null)
                 progressBarUI.HideProgressBar();
 
-            // 显示结果
             DisplayEvaluationToConsole(evaluation);
             DisplayEvaluationToUI(evaluation);
         }
         catch (Exception ex)
         {
-            Debug.LogError("❌ JSON解析失败: " + ex.Message);
+            Debug.LogError("JSON解析失败: " + ex.Message);
             Debug.LogError($"尝试解析的内容: {responseText}");
 
-            // 显示错误报告
             DisplayErrorReport(responseText, ex.Message);
         }
     }
@@ -317,15 +313,12 @@ public class ScoreManager : MonoBehaviour
 
     private void DisplayEvaluationToUI(DynamicEvaluationResult evaluation)
     {
-        // 确保进度条已隐藏
         if (progressBarUI != null)
             progressBarUI.HideProgressBar();
 
-        // 显示评估界面
         if (evaluationCanvas != null)
             evaluationCanvas.gameObject.SetActive(true);
 
-        // 使用新的格式化器
         MedicalReportFormatter formatter = reportText.GetComponent<MedicalReportFormatter>();
         if (formatter != null)
         {
@@ -335,14 +328,12 @@ public class ScoreManager : MonoBehaviour
         else
         {
             Debug.LogError("未找到MedicalReportFormatter组件！");
-            // 回退到原始格式
             DisplayOriginalFormat(evaluation);
         }
 
-        // 保存评估到AWS数据库
         if (AWSAPIConnector.Instance != null)
         {
-            Debug.Log("💾 Saving evaluation to AWS database...");
+            Debug.Log("Saving evaluation to AWS database...");
             AWSAPIConnector.Instance.SaveEvaluationFromScoreManager(evaluation);
         }
         else
@@ -356,25 +347,20 @@ public class ScoreManager : MonoBehaviour
     private void DisplayOriginalFormat(DynamicEvaluationResult evaluation)
     {
         StringBuilder reportContent = new StringBuilder();
-        reportContent.AppendLine("Evaluation Report");
-        reportContent.AppendLine();
-        reportContent.AppendLine($"Conversation Summary: {conversationTurns.Count} dialogue turns completed");
-        reportContent.AppendLine();
-        reportContent.AppendLine("Assessment Criteria Details");
-        reportContent.AppendLine();
+        reportContent.AppendLine("Evaluation Report\n");
+        reportContent.AppendLine($"Conversation Summary: {conversationTurns.Count} dialogue turns completed\n");
+        reportContent.AppendLine("Assessment Criteria Details\n");
 
         foreach (var criterion in evaluation.criteria)
         {
             reportContent.AppendLine($"• {criterion.name}");
             reportContent.AppendLine($"  Score: {criterion.score}/{criterion.maxScore}");
-            reportContent.AppendLine($"  Explanation: {criterion.explanation}");
-            reportContent.AppendLine();
+            reportContent.AppendLine($"  Explanation: {criterion.explanation}\n");
         }
 
         reportContent.AppendLine("Overall Assessment");
         reportContent.AppendLine($"Total Score: {evaluation.totalScore}");
-        reportContent.AppendLine($"Performance Level: {evaluation.performanceLevel}");
-        reportContent.AppendLine();
+        reportContent.AppendLine($"Performance Level: {evaluation.performanceLevel}\n");
         reportContent.AppendLine("Overall Summary");
         reportContent.AppendLine(evaluation.overallExplanation);
 
@@ -429,7 +415,6 @@ public class ScoreManager : MonoBehaviour
             Debug.Log("评估报告已关闭");
         }
 
-        // 确保进度条也被隐藏
         if (progressBarUI != null)
             progressBarUI.HideProgressBar();
     }
@@ -444,14 +429,12 @@ public class ScoreManager : MonoBehaviour
         return true;
     }
 
-    // 获取对话轮次数据，供AWS连接器使用
     public List<ConversationTurn> GetConversationTurns()
     {
         return conversationTurns;
     }
 }
 
-// 数据类定义
 [Serializable]
 public class ConversationTurn
 {
