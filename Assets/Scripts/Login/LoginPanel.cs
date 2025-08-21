@@ -19,7 +19,8 @@ public class LoginPanel : MonoBehaviour
     [SerializeField] private GameObject panelRoot;        // Optional: leave empty to use this GameObject
 
     [Header("Network Settings")]
-    [SerializeField] private string loginUrl =
+    [SerializeField]
+    private string loginUrl =
         "https://gu6dg3g185.execute-api.us-west-2.amazonaws.com/dev/auth/login";
     [Tooltip("Total seconds before the request times out.")]
     [SerializeField, Range(5, 120)] private int requestTimeoutSeconds = 20;
@@ -206,6 +207,16 @@ public class LoginPanel : MonoBehaviour
             OnLoginSucceededWithLevel?.Invoke(ok.simulationLevel);
             OnLoginSucceededWithUserId?.Invoke(ok.userID ?? string.Empty);
 
+            var aws = AWSAPIConnector.Instance ?? FindObjectOfType<AWSAPIConnector>();
+            if (aws != null)
+            {
+                aws.ApplyLoginContext(ok.userID, ok.simulationLevel);
+            }
+            else
+            {
+                Debug.LogWarning("[LoginPanel] AWSAPIConnector not found in scene; skipping ApplyLoginContext.");
+            }
+
             // Pass both userID and simulationLevel to OpenAIRequest
             var openAI = OpenAIRequest.Instance ?? FindObjectOfType<OpenAIRequest>();
             if (openAI != null)
@@ -268,9 +279,9 @@ public class LoginPanel : MonoBehaviour
 
     private void ToggleInteractable(bool enabled)
     {
-        if (loginButton != null)    loginButton.interactable = enabled;
-        if (usernameField != null)  usernameField.interactable = enabled;
-        if (passwordField != null)  passwordField.interactable = enabled;
+        if (loginButton != null) loginButton.interactable = enabled;
+        if (usernameField != null) usernameField.interactable = enabled;
+        if (passwordField != null) passwordField.interactable = enabled;
     }
 
     private void ShowSpinner(bool show)

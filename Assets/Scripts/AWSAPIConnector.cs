@@ -44,6 +44,15 @@ public class AWSAPIConnector : MonoBehaviour
         Debug.Log($"Test Simulation Level: {testSimulationLevel}");
     }
 
+    public void ApplyLoginContext(string userId, int simLevel)
+    {
+        if (!string.IsNullOrWhiteSpace(userId)) testUserId = userId.Trim();
+        if (simLevel > 0) testSimulationLevel = simLevel;
+
+        if (enableDetailedLogging)
+            Debug.Log($"[AWSAPIConnector] Using test fields -> userID='{testUserId}', simulationLevel={testSimulationLevel}");
+    }
+
     // =================
     // 1. 保存聊天历史记录
     // =================
