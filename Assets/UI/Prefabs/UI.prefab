@@ -423,7 +423,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'Target
+  m_text: 'Tasks
 
 '
   m_isRightToLeft: 0
@@ -648,8 +648,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "4. Speech & Language Screening Tasks - Repetition\r\nRepeat single-syllable
-    words.\r\nRepeat short phrases/sentences.\r"
+  m_Text: "4. Automatic Speech Tasks\n    - Count from 1\u201320 together.  \n   
+    - Recite days of the week or months of the year.  \n    - Allow time for responses."
 --- !u!1 &1018071011636496940
 GameObject:
   m_ObjectHideFlags: 0
@@ -1574,7 +1574,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -550}
+  m_AnchoredPosition: {x: 300, y: -560}
   m_SizeDelta: {x: 600, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4472861855775455217
@@ -1920,8 +1920,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "3. Speech & Language Screening Tasks - Counting / Automatic Speech\r\nRecite
-    days of the week or months of the year.\r\nCount from 1\u201320 together.\r"
+  m_Text: "3. Case History Questions\n    - Ask clear yes/no questions.  \n    -
+    Use simple WH- questions (who, what, where, when).  \n    - Confirm or repeat
+    back key information to ensure accuracy.  "
 --- !u!1 &4047170068710089517
 GameObject:
   m_ObjectHideFlags: 0
@@ -2183,7 +2184,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -360}
+  m_AnchoredPosition: {x: 300, y: -310}
   m_SizeDelta: {x: 600, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4115387876968554912
@@ -2302,8 +2303,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "7. Comprehension Checks\r\nAnswer yes/no questions with a reliability
-    check.\r"
+  m_Text: "7. Word Filling or Sentence Completion Tasks\n    - Fill in the blak for
+    familiar phrases \n    \u2013 e.g. \u201CSalt and ____\u201D \u2192 \u201Cpepper\u201D"
 --- !u!1 &4417683446993795804
 GameObject:
   m_ObjectHideFlags: 0
@@ -2534,7 +2535,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -430}
+  m_AnchoredPosition: {x: 300, y: -400}
   m_SizeDelta: {x: 600, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2818086621738312788
@@ -2728,9 +2729,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "1. Opening & Rapport Building\r\nGreet the patient by name and introduce
-    yourself/role.\r\nConfirm comfort level and explain the session purpose.\r\nUse
-    supported conversation techniques right from the start (slow rate, short sentences).\r"
+  m_Text: "1. Greeting and Professional Introduction\n    -  Greet patient by name\n   
+    -  State your role clearly\n    -  Explain session purpose simply"
 --- !u!1 &5428308605445870350
 GameObject:
   m_ObjectHideFlags: 0
@@ -2971,9 +2971,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "2. Case History / Information Gathering\r\nAsk yes/no biographical questions
-    (e.g., \u201CIs your name Sam?\u201D).\r\nAsk simple WH- questions with visual
-    prompts (e.g., \u201CWhere do you live?\u201D).\r"
+  m_Text: "2. Use of Supported Conversation Techniques\n    - Speak slowly and clearly. 
+    \n    - Use short, simple sentences.  \n    - Give extra time for the patient
+    to respond.  "
 --- !u!1 &5591246742147982164
 GameObject:
   m_ObjectHideFlags: 0
@@ -3127,9 +3127,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "5. Speech & Language Screening Tasks - Naming\r\nConfrontation naming
-    (show object/picture).\r\nResponsive naming (e.g., \u201CWhat do you eat with?\u201D
-    \u2192 \u201CSpoon\u201D).\r"
+  m_Text: "5. Repetition Tasks\n    - Repeat single-syllable words with the patient. 
+    \n    - Practice short phrases or simple sentences.  \n    - Give clear models
+    and allow time to respond.  "
 --- !u!1 &6091114653961609935
 GameObject:
   m_ObjectHideFlags: 0
@@ -3370,15 +3370,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: '8. Closing the Session
-
-    Summarize what you did today.
-
-    Offer positive
-    feedback and encouragement.
-
-    Thank the patient and close the interaction
-    respectfully.'
+  m_Text: "8. Session Closure\n    - Summarize what you did today.  \n    - Offer
+    positive feedback and encouragement.  \n    - Thank the patient and close the
+    interaction respectfully.  "
 --- !u!1 &6636539575888106313
 GameObject:
   m_ObjectHideFlags: 0
@@ -3489,7 +3483,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -600}
+  m_AnchoredPosition: {x: 300, y: -625}
   m_SizeDelta: {x: 600, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7873450651112316344
@@ -3941,7 +3935,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -170}
+  m_AnchoredPosition: {x: 300, y: -138}
   m_SizeDelta: {x: 600, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1514269127934118272
@@ -4017,7 +4011,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -270}
+  m_AnchoredPosition: {x: 300, y: -225}
   m_SizeDelta: {x: 600, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7903710666943743463
@@ -4093,7 +4087,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 300, y: -500}
+  m_AnchoredPosition: {x: 300, y: -490}
   m_SizeDelta: {x: 600, y: 200}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8943649844618664676
@@ -4449,8 +4443,8 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "6. Speech & Language Screening Tasks - Sentence Completion\r\nFill in
-    the blank for familiar phrases (\u201CHappy ___\u201D \u2192 \u201CBirthday\u201D).\r"
+  m_Text: "6. Responsive Naming Tasks\n    - Ask simple, clear naming questions \n   
+    \u2013 e.g. \u201CWhat do you eat with?\u201D \u2192 \u201CSpoon\u201D"
 --- !u!1 &9203413173102052741
 GameObject:
   m_ObjectHideFlags: 0
