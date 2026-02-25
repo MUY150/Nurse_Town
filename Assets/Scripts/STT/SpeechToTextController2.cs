@@ -3,22 +3,35 @@ using TMPro;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.IO;
-using Newtonsoft.Json; // Make sure you have Newtonsoft.Json imported for JSON parsing
+using Newtonsoft.Json;
 
+/// <summary>
+/// 语音转文本控制器V2，负责录制音频并使用OpenAI Whisper API进行语音识别
+/// </summary>
+/// <remarks>
+/// C#特性说明：
+/// - MonoBehaviour：Unity脚本基类
+/// - async/await异步编程：用于异步HTTP请求
+/// - Task异步操作：表示异步操作
+/// - using语句：自动资源管理（HttpClient和FileStream）
+/// - 异常处理：try-catch块
+/// - 字符串插值：$""语法
+/// - Unity生命周期方法：Start()、Update()
+/// - 输入系统：Input.GetKeyDown/Up检测按键
+/// - 文件I/O：Path.Combine、File.Delete
+/// - JSON序列化：JsonConvert处理JSON数据
+/// - 泛型：HttpClient<T>、Task<T>
+/// </remarks>
 public class SpeechToTextController2 : MonoBehaviour
 {
-    public TextMeshProUGUI transcriptText; // Reference to the Text or TextMeshPro field in the UI
+    public TextMeshProUGUI transcriptText;
     private bool isRecording = false;
     private AudioClip recordedClip;
-
-    // Set your OpenAI API Key here
     private string openAiApiKey;
 
     void Start()
     {
         openAiApiKey = EnvironmentLoader.GetEnvVariable("OPENAI_API_KEY");
-        // Debug.Log("APIKey:" + openAiApiKey);
-        
     }
 
     void Update()
@@ -33,6 +46,9 @@ public class SpeechToTextController2 : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 开始录音
+    /// </summary>
     private void StartRecording()
     {
         if (!isRecording)
@@ -42,32 +58,33 @@ public class SpeechToTextController2 : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 停止录音并转录
+    /// </summary>
     private void StopRecordingAndTranscribe()
     {
         if (isRecording)
         {
             Microphone.End(null);
             isRecording = false;
-            _ = TranscribeAudio(); // Fire and forget the async task
+            _ = TranscribeAudio();
         }
     }
 
+    /// <summary>
+    /// 转录音频的异步方法
+    /// </summary>
     private async Task TranscribeAudio()
     {
-        // Save the AudioClip as a WAV file using SavWav
         string filePath = Path.Combine(Application.persistentDataPath, "recordedAudio.wav");
         SavWav.Save("recordedAudio.wav", recordedClip);
 
-        // Send the WAV file to OpenAI Whisper API
         string transcription = await SendToWhisperAPI(filePath, "whisper-1", "en", "json", 0.2f);
 
-        // Display only the transcription text
         transcriptText.text = transcription;
 
-        // Optionally delete the temporary file
         File.Delete(filePath);
 
-        // Fiona update 11/13: integrate with patient NPC
         if (OpenAIRequest.Instance != null)
         {
             OpenAIRequest.Instance.ReceiveNurseTranscription(transcription);
@@ -78,6 +95,9 @@ public class SpeechToTextController2 : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 发送音频到Whisper API进行转录
+    /// </summary>
     private async Task<string> SendToWhisperAPI(string filePath, string model, string language, string responseFormat, float temperature)
     {
         using (HttpClient client = new HttpClient())
@@ -102,7 +122,6 @@ public class SpeechToTextController2 : MonoBehaviour
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // Parse the JSON response and extract only the "text" field
                     var responseContent = await response.Content.ReadAsStringAsync();
                     var transcriptionResponse = JsonConvert.DeserializeObject<TranscriptionResponse>(responseContent);
                     return transcriptionResponse.text;
@@ -117,7 +136,9 @@ public class SpeechToTextController2 : MonoBehaviour
         }
     }
 
-    // Define a class to represent the JSON response structure
+    /// <summary>
+    /// 转录响应数据类
+    /// </summary>
     private class TranscriptionResponse
     {
         public string text { get; set; }

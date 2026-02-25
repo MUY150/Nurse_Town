@@ -1,3 +1,11 @@
+// ============================================================================
+// 文件名: Audio2FaceManager.cs
+// 功能描述: 音频到面部动画管理器，负责调用NVIDIA API生成面部动画
+// 作者: AI Assistant
+// 创建日期: 2026-01-11
+// 修改记录: 添加详细中文注释，标注C#特性和Unity API
+// ============================================================================
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,7 +17,17 @@ using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// Create classes for JSON responses
+// ============================================================================
+// C#特性说明: [Serializable] 特性
+// ============================================================================
+// 这是C#的序列化特性，用于标记类可以被序列化
+// 在Unity中，这个特性让类的实例可以在Inspector面板中显示和编辑
+// 类似C++中需要手动实现序列化函数，C#通过特性自动处理
+// ============================================================================
+
+/// <summary>
+/// NVIDIA API响应数据结构
+/// </summary>
 [Serializable]
 public class NvidiaApiResponse
 {
@@ -20,6 +38,9 @@ public class NvidiaApiResponse
     public NvidiaResult result;
 }
 
+/// <summary>
+/// NVIDIA API结果数据结构
+/// </summary>
 [Serializable]
 public class NvidiaResult
 {
@@ -27,6 +48,9 @@ public class NvidiaResult
     public string animation_data;
 }
 
+/// <summary>
+/// NVIDIA API错误响应数据结构
+/// </summary>
 [Serializable]
 public class NvidiaErrorResponse
 {
@@ -34,9 +58,35 @@ public class NvidiaErrorResponse
     public string message;
 }
 
+/// <summary>
+/// 音频到面部动画管理器
+/// 负责将音频数据通过NVIDIA API转换为面部动画CSV数据
+/// </summary>
+/// <remarks>
+/// C#特性说明:
+/// - MonoBehaviour: Unity所有脚本的基础类，提供生命周期方法
+/// - 单例模式: 使用静态Instance属性确保全局唯一实例
+/// - async/await: C#异步编程关键字，用于非阻塞的API调用
+/// - 协程(Coroutine): Unity特有的异步执行机制
+/// </remarks>
 public class Audio2FaceManager : MonoBehaviour
 {
+    // ============================================================================
+    // C#特性说明: 属性(Property)
+    // ============================================================================
+    // C#的属性是特殊的成员，提供了get和set访问器
+    // 类似C++的getter/setter，但语法更简洁
+    // { get; private set; } 表示只能从外部读取，内部可以修改
+    // ============================================================================
     public static Audio2FaceManager Instance { get; private set; }
+    
+    // ============================================================================
+    // Unity特性说明: [Header] 和 [Tooltip]
+    // ============================================================================
+    // [Header]: 在Inspector面板中创建分组标题
+    // [Tooltip]: 鼠标悬停在字段上时显示的提示文本
+    // 这些是Unity的序列化特性，让变量在Inspector中可编辑
+    // ============================================================================
     
     [Header("Local Python Script Configuration")]
     [Tooltip("Path to the Python script")]
@@ -79,7 +129,13 @@ public class Audio2FaceManager : MonoBehaviour
     [Tooltip("Whether to automatically generate facial animation when TTS is generated")]
     public bool autoProcessTTS = true;
 
-    // Define the enum outside of the field declaration
+    // ============================================================================
+    // C#特性说明: 枚举(Enum)
+    // ============================================================================
+    // C#的枚举类似C++的enum，用于定义一组命名常量
+    // 在Unity中，枚举会在Inspector中显示为下拉菜单
+    // ============================================================================
+    
     public enum NvidiaModel { Mark, Claire, James }
     
     [Header("NVIDIA Model Settings")]
@@ -93,6 +149,14 @@ public class Audio2FaceManager : MonoBehaviour
     [Tooltip("Show detailed debug logs")]
     public bool detailedLogging = false;
     
+    // ============================================================================
+    // C#特性说明: 字符串插值
+    // ============================================================================
+    // C#使用 $"..." 语法进行字符串插值
+    // 类似C++的printf或std::format，但更简洁直观
+    // 可以直接在字符串中嵌入变量和表达式
+    // ============================================================================
+    
     // Private state variables
     private string tempAudioPath;
     private string csvOutputPath;
@@ -103,9 +167,19 @@ public class Audio2FaceManager : MonoBehaviour
     private float pollInterval = 2.0f; // seconds between status checks
     private Process currentProcess;
     
+    // ============================================================================
+    // Unity生命周期方法: Awake()
+    // ============================================================================
+    // Awake在对象实例化时立即调用，早于Start()
+    // 适合用于初始化单例模式和设置初始状态
+    // ============================================================================
+    
     void Awake()
     {
+        // Application.temporaryCachePath是Unity提供的临时目录路径
+        // Path.Combine是C#的路径拼接方法，自动处理路径分隔符
         tempDirectory = Path.Combine(Application.temporaryCachePath, "Audio2FaceTemp");
+        
         // Ensure temp directory exists
         if (!Directory.Exists(tempDirectory))
         {
@@ -113,13 +187,21 @@ public class Audio2FaceManager : MonoBehaviour
             UnityEngine.Debug.Log($"Created temporary directory: {tempDirectory}");
         }
         
-        // Singleton pattern
+        // ============================================================================
+        // C#设计模式: 单例模式(Singleton)
+        // ============================================================================
+        // 单例模式确保类只有一个实例存在
+        // 在Unity中常用于管理器和全局访问
+        // Instance是静态属性，可以从任何地方访问
+        // ============================================================================
+        
         if (Instance == null)
         {
-            Instance = this;
+            Instance = this;  // this是C#的关键字，引用当前实例
         }
         else
         {
+            // Destroy是Unity的方法，销毁游戏对象
             Destroy(gameObject);
             return;
         }
@@ -134,6 +216,8 @@ public class Audio2FaceManager : MonoBehaviour
             if (string.IsNullOrEmpty(apiKey))
             {
                 try {
+                    // System.Environment.GetEnvironmentVariable是.NET的标准方法
+                    // 用于读取系统环境变量
                     apiKey = System.Environment.GetEnvironmentVariable("NVIDIA_API_KEY");
                     UnityEngine.Debug.Log("Tried loading API key directly from System.Environment");
                 } catch (Exception ex) {
@@ -148,6 +232,7 @@ public class Audio2FaceManager : MonoBehaviour
                 UnityEngine.Debug.Log("Using hardcoded API key as fallback");
             }
             
+            // C#字符串插值示例
             UnityEngine.Debug.Log($"API Key is {(string.IsNullOrEmpty(apiKey) ? "empty" : $"{apiKey.Length} characters long")}");
             
             if (string.IsNullOrEmpty(apiKey))
@@ -159,9 +244,18 @@ public class Audio2FaceManager : MonoBehaviour
         UnityEngine.Debug.Log($"Audio2Face Manager initialized. Using temporary directory: {tempDirectory}");
     }
     
+    // ============================================================================
+    // Unity生命周期方法: Start()
+    // ============================================================================
+    // Start在Awake之后、第一帧更新之前调用
+    // 适合用于查找组件引用和启动协程
+    // ============================================================================
+    
     void Start()
     {
         // Find the animation controller if not assigned
+        // FindObjectOfType是Unity的泛型方法，查找场景中指定类型的组件
+        // 类似C++中遍历对象列表查找特定类型
         if (animationController == null)
         {
             animationController = FindObjectOfType<CSVFacialAnimationController>();
@@ -191,11 +285,20 @@ public class Audio2FaceManager : MonoBehaviour
         UnityEngine.Debug.Log("Audio2FaceManager ready.");
     }
     
+    // ============================================================================
+    // Unity特性: 协程(Coroutine)
+    // ============================================================================
+    // 协程是Unity特有的异步执行机制
+    // 允许在多个帧中分步执行代码，避免阻塞主线程
+    // 使用IEnumerator接口和yield return语句
+    // ============================================================================
+    
     // Coroutine to periodically check for new TTS audio
     private IEnumerator CheckForTTSAudio()
     {
         AudioClip lastProcessedClip = null;
         
+        // while(true)创建无限循环，直到协程被停止
         while (true)
         {
             if (ttsManager != null)
@@ -209,6 +312,7 @@ public class Audio2FaceManager : MonoBehaviour
                     lastProcessedClip = currentClip;
                     
                     // Wait a short time to ensure the clip is fully generated
+                    // WaitForSeconds是Unity的协程等待方法
                     yield return new WaitForSeconds(0.5f);
                     
                     // Process this clip for facial animation using the safe method
@@ -221,9 +325,22 @@ public class Audio2FaceManager : MonoBehaviour
         }
     }
     
+    // ============================================================================
+    // C#特性说明: 反射(Reflection)
+    // ============================================================================
+    // 反射是C#的强大特性，允许在运行时检查和调用类型成员
+    // 类似C++的RTTI，但功能更强大
+    // GetType()、GetMethod()、Invoke()都是反射API
+    // ============================================================================
+    
     /// <summary>
     /// Gets the current audio clip from the TTSManager using various methods
     /// </summary>
+    /// <returns>当前TTS音频剪辑，如果不存在则返回null</returns>
+    /// <remarks>
+    /// C#特性: 反射(Reflection)
+    /// 使用反射动态调用TTSManager的方法和访问字段
+    /// </remarks>
     public AudioClip GetCurrentAudioClipFromTTS()
     {
         if (ttsManager == null)
@@ -235,27 +352,34 @@ public class Audio2FaceManager : MonoBehaviour
         try
         {
             // Try GetCurrentAudioClip method
+            // GetType()获取对象的运行时类型信息
+            // GetMethod()使用绑定标志查找公共实例方法
             var method = ttsManager.GetType().GetMethod("GetCurrentAudioClip", 
                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
             if (method != null)
             {
+                // Invoke()动态调用方法
+                // 类似C++的函数指针调用，但更安全
                 clip = method.Invoke(ttsManager, null) as AudioClip;
                 if (clip != null)
                     return clip;
             }
             
             // Try audioClip field or property
+            // GetField()查找字段，包括私有字段
             var field = ttsManager.GetType().GetField("audioClip", 
                 System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance | 
                 System.Reflection.BindingFlags.NonPublic);
             if (field != null)
             {
+                // GetValue()获取字段的值
                 clip = field.GetValue(ttsManager) as AudioClip;
                 if (clip != null)
                     return clip;
             }
             
             // Try audioSource.clip
+            // GetComponent()获取对象上的组件
             AudioSource audioSource = ttsManager.GetComponent<AudioSource>();
             if (audioSource != null && audioSource.clip != null)
             {
@@ -284,6 +408,8 @@ public class Audio2FaceManager : MonoBehaviour
     // Function to get the correct function ID based on the selected model
     public string GetFunctionId()
     {
+        // C#的switch语句类似C++，但更强大
+        // 可以直接枚举类型，不需要强制转换
         switch (selectedModel)
         {
             case NvidiaModel.Mark:
@@ -313,11 +439,24 @@ public class Audio2FaceManager : MonoBehaviour
         }
     }
 
+    // ============================================================================
+    // C#特性说明: async/await 异步编程
+    // ============================================================================
+    // async: 标记方法为异步方法，可以包含await操作
+    // await: 等待异步操作完成，不会阻塞主线程
+    // Task: 表示异步操作，类似C++的std::future或std::promise
+    // ============================================================================
+    
     /// <summary>
     /// Process audio data to generate facial animation through local Python script
     /// </summary>
     /// <param name="audioData">The raw audio data bytes</param>
+    /// <param name="messageContent">Optional message content for animation update</param>
     /// <returns>True if processing was successful</returns>
+    /// <remarks>
+    /// C#特性: async/await异步编程
+    /// 使用await等待Python脚本执行完成，不阻塞Unity主线程
+    /// </remarks>
     public async Task<bool> ProcessAudioForFacialAnimation(byte[] audioData, string messageContent = null)
     {
         if (audioData == null || audioData.Length == 0)
@@ -381,10 +520,21 @@ public class Audio2FaceManager : MonoBehaviour
         return success;
     }
     
+    // ============================================================================
+    // Unity特性: 协程(Coroutine)和异步编程结合
+    // ============================================================================
+    // 协程是Unity的异步机制，使用IEnumerator和yield return
+    // 在协程中使用await需要注意，因为yield不能在try-catch中
+    // ============================================================================
+    
     /// <summary>
     /// Integration method to use TTS audio directly from TTSManager
     /// </summary>
     /// <returns>True if processing was successful</returns>
+    /// <remarks>
+    /// C#特性: async/await
+    /// 调用ProcessAudioForFacialAnimation异步方法
+    /// </remarks>
     public async Task<bool> ProcessTTSAudioForFacialAnimation()
     {
         try
@@ -478,10 +628,22 @@ public class Audio2FaceManager : MonoBehaviour
         }
     }
     
+    // ============================================================================
+    // Unity协程注意事项: yield不能在try-catch中使用
+    // ============================================================================
+    // Unity的协程中，yield return语句不能直接放在try-catch块内
+    // 需要先将await的结果保存到变量，然后再yield
+    // 或者使用Task.Run()将异步操作包装起来
+    // ============================================================================
+    
     /// <summary>
     /// Modified method to safely process TTS audio for facial animation using WavUtility
     /// This version avoids threading issues with AudioClip.GetData
     /// </summary>
+    /// <remarks>
+    /// Unity协程注意事项: 避免在协程中直接使用AudioClip.GetData
+    /// 因为GetData可能在主线程之外调用，导致线程安全问题
+    /// </remarks>
     public void ProcessTTSAudioForAnimationSafe()
     {
         StartCoroutine(ProcessTTSAudioWithWavUtility());
@@ -491,6 +653,10 @@ public class Audio2FaceManager : MonoBehaviour
     /// Coroutine for processing TTS audio using WavUtility
     /// This approach avoids threading issues with AudioClip.GetData
     /// </summary>
+    /// <remarks>
+    /// Unity协程模式: 将异步操作分解为多个步骤
+    /// 每个步骤之间使用yield return等待
+    /// </remarks>
     private IEnumerator ProcessTTSAudioWithWavUtility()
     {
         // Check for TTSManager
@@ -675,9 +841,25 @@ public class Audio2FaceManager : MonoBehaviour
         }
     }
 
+    // ============================================================================
+    // C#特性说明: LINQ(Language Integrated Query)
+    // ============================================================================
+    // LINQ是C#的强大查询语言，类似SQL的查询语法
+    // 用于对集合进行过滤、排序、投影等操作
+    // Where()、Select()、OrderBy()等都是LINQ方法
+    // ============================================================================
+    
     /// <summary>
     /// Converts an AudioClip to WAV format byte array
     /// </summary>
+    /// <param name="clip">要转换的音频剪辑</param>
+    /// <returns>WAV格式的字节数组</returns>
+    /// <remarks>
+    /// C#特性: LINQ、using语句、Task.Run()
+    /// - Task.Run(): 将同步操作放到线程池执行
+    /// - using: 自动资源管理，类似C++的RAII
+    /// - LINQ: 用于数据转换和查询
+    /// </remarks>
     public async Task<byte[]> ConvertAudioClipToWav(AudioClip clip)
     {
         return await Task.Run(() => {
@@ -744,9 +926,24 @@ public class Audio2FaceManager : MonoBehaviour
         });
     }
     
+    // ============================================================================
+    // C#特性说明: StringBuilder
+    // ============================================================================
+    // StringBuilder是C#的高效字符串构建类
+    // 类似C++的std::stringstream，但更优化
+    // 避免频繁的字符串分配，提高性能
+    // ============================================================================
+    
     /// <summary>
     /// Creates a dummy CSV file for testing without the API
     /// </summary>
+    /// <param name="outputPath">输出文件路径</param>
+    /// <returns>如果创建成功返回true</returns>
+    /// <remarks>
+    /// C#特性: StringBuilder、Math函数
+    /// - StringBuilder: 高效构建字符串
+    /// - Math.Sin/Math.Cos: C#的数学函数，类似C++的math库
+    /// </remarks>
     public bool GenerateDummyCsvFile(string outputPath)
     {
         try
@@ -1246,9 +1443,23 @@ public async Task<bool> RunPythonScriptForAnimation(string audioFilePath, string
     }
 }
 
+    // ============================================================================
+    // Unity生命周期方法: OnDestroy()
+    // ============================================================================
+    // OnDestroy在对象被销毁时调用
+    // 适合用于清理资源、停止协程、取消异步操作
+    // ============================================================================
+    
     /// <summary>
     /// Loads the generated animation and audio into the facial animation controller
     /// </summary>
+    /// <param name="audioPath">音频文件路径</param>
+    /// <param name="csvPath">CSV动画文件路径</param>
+    /// <param name="messageContent">可选的消息内容，用于更新动画</param>
+    /// <remarks>
+    /// Unity特性: 协程启动
+    /// 使用StartCoroutine启动异步加载过程
+    /// </remarks>
     public void LoadAnimationIntoController(string audioPath, string csvPath, string messageContent = null)
     {
         if (animationController == null)
@@ -1269,8 +1480,15 @@ public async Task<bool> RunPythonScriptForAnimation(string audioFilePath, string
     /// <summary>
     /// Coroutine to load animation safely without try/catch around yield statements
     /// </summary>
+    /// <param name="audioPath">音频文件路径</param>
+    /// <param name="csvPath">CSV文件路径</param>
+    /// <param name="messageContent">可选的消息内容</param>
+    /// <remarks>
+    /// Unity协程注意事项: yield不能在try-catch块内
+    /// 需要将UnityWebRequest的结果处理放在yield之后
+    /// </remarks>
     // Properly fixed version that avoids yield inside try blocks
-private IEnumerator LoadAnimationCoroutine(string audioPath, string csvPath, string messageContent = null)
+    private IEnumerator LoadAnimationCoroutine(string audioPath, string csvPath, string messageContent = null)
 {
     // Log file information
     UnityEngine.Debug.Log($"Loading animation - Audio file exists: {File.Exists(audioPath)}, Size: {(File.Exists(audioPath) ? new FileInfo(audioPath).Length : 0)} bytes");

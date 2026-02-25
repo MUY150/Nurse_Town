@@ -1,5 +1,5 @@
 //	Copyright (c) 2012 Calvin Rien
-//        http://the.darktable.com
+//	http://the.darktable.com
 //
 //	This software is provided 'as-is', without any express or implied warranty. In
 //	no event will the authors be held liable for any damages arising from the use
@@ -29,11 +29,30 @@ using System.IO;
 using UnityEngine;
 using System.Collections.Generic;
 
+/// <summary>
+/// WAV文件保存工具类，用于将Unity的AudioClip保存为WAV格式文件
+/// </summary>
+/// <remarks>
+/// C#特性说明：
+/// - 静态类（static class）：不能实例化，只包含静态成员
+/// - 常量（const）：固定不变的值
+/// - 泛型：List<T>动态数组
+/// - 文件I/O：FileStream、FileMode、FileAccess、SeekOrigin
+/// - 二进制操作：BitConverter、Byte[]、Int16、UInt16
+/// - using语句：自动资源管理
+/// - 字符串操作：string.ToLower()、Path.Combine、Path.GetDirectoryName
+/// - 数组操作：Array、List<T>的方法
+/// - 数学函数：Mathf.Abs()
+/// </remarks>
 public static class SavWav
 {
-
     const int HEADER_SIZE = 44;
 
+    /// <summary>
+    /// 保存AudioClip为WAV文件
+    /// </summary>
+    /// <param name="filename">文件名</param>
+    /// <param name="clip">音频剪辑</param>
     public static bool Save(string filename, AudioClip clip)
     {
         if (!filename.ToLower().EndsWith(".wav"))
@@ -45,20 +64,22 @@ public static class SavWav
 
         Debug.Log(filepath);
 
-        // Make sure directory exists if user is saving to sub dir.
         Directory.CreateDirectory(Path.GetDirectoryName(filepath));
 
         using (var fileStream = CreateEmpty(filepath))
         {
-
             ConvertAndWrite(fileStream, clip);
-
             WriteHeader(fileStream, clip);
         }
 
-        return true; // TODO: return false if there's a failure saving the file
+        return true;
     }
 
+    /// <summary>
+    /// 去除静音（AudioClip版本）
+    /// </summary>
+    /// <param name="clip">音频剪辑</param>
+    /// <param name="min">最小音量阈值</param>
     public static AudioClip TrimSilence(AudioClip clip, float min)
     {
         var samples = new float[clip.samples];
@@ -68,11 +89,27 @@ public static class SavWav
         return TrimSilence(new List<float>(samples), min, clip.channels, clip.frequency);
     }
 
+    /// <summary>
+    /// 去除静音（List版本）
+    /// </summary>
+    /// <param name="samples">采样数据列表</param>
+    /// <param name="min">最小音量阈值</param>
+    /// <param name="channels">声道数</param>
+    /// <param name="hz">采样率</param>
     public static AudioClip TrimSilence(List<float> samples, float min, int channels, int hz)
     {
         return TrimSilence(samples, min, channels, hz, false, false);
     }
 
+    /// <summary>
+    /// 去除静音（完整版本）
+    /// </summary>
+    /// <param name="samples">采样数据列表</param>
+    /// <param name="min">最小音量阈值</param>
+    /// <param name="channels">声道数</param>
+    /// <param name="hz">采样率</param>
+    /// <param name="_3D">是否为3D音频</param>
+    /// <param name="stream">是否为流式音频</param>
     public static AudioClip TrimSilence(List<float> samples, float min, int channels, int hz, bool _3D, bool stream)
     {
         int i;
@@ -84,7 +121,6 @@ public static class SavWav
                 break;
             }
         }
-
         samples.RemoveRange(0, i);
 
         for (i = samples.Count - 1; i > 0; i--)
@@ -94,7 +130,6 @@ public static class SavWav
                 break;
             }
         }
-
         samples.RemoveRange(i, samples.Count - i);
 
         var clip = AudioClip.Create("TempClip", samples.Count, channels, hz, _3D, stream);
@@ -104,12 +139,17 @@ public static class SavWav
         return clip;
     }
 
+    /// <summary>
+    /// 创建空的WAV文件流
+    /// </summary>
+    /// <param name="filepath">文件路径</param>
+    /// <returns>文件流</returns>
     static FileStream CreateEmpty(string filepath)
     {
         var fileStream = new FileStream(filepath, FileMode.Create);
         byte emptyByte = new byte();
 
-        for (int i = 0; i < HEADER_SIZE; i++) //preparing the header
+        for (int i = 0; i < HEADER_SIZE; i++)
         {
             fileStream.WriteByte(emptyByte);
         }
@@ -117,21 +157,22 @@ public static class SavWav
         return fileStream;
     }
 
+    /// <summary>
+    /// 转换并写入音频数据
+    /// </summary>
+    /// <param name="fileStream">文件流</param>
+    /// <param name="clip">音频剪辑</param>
     static void ConvertAndWrite(FileStream fileStream, AudioClip clip)
     {
-
         var samples = new float[clip.samples];
 
         clip.GetData(samples, 0);
 
         Int16[] intData = new Int16[samples.Length];
-        //converting in 2 float[] steps to Int16[], //then Int16[] to Byte[]
 
         Byte[] bytesData = new Byte[samples.Length * 2];
-        //bytesData array is twice the size of
-        //dataSource array because a float converted in Int16 is 2 bytes.
 
-        int rescaleFactor = 32767; //to convert float to Int16
+        int rescaleFactor = 32767;
 
         for (int i = 0; i < samples.Length; i++)
         {
@@ -144,9 +185,13 @@ public static class SavWav
         fileStream.Write(bytesData, 0, bytesData.Length);
     }
 
+    /// <summary>
+    /// 写入WAV文件头
+    /// </summary>
+    /// <param name="fileStream">文件流</param>
+    /// <param name="clip">音频剪辑</param>
     static void WriteHeader(FileStream fileStream, AudioClip clip)
     {
-
         var hz = clip.frequency;
         var channels = clip.channels;
         var samples = clip.samples;
@@ -180,7 +225,7 @@ public static class SavWav
         Byte[] sampleRate = BitConverter.GetBytes(hz);
         fileStream.Write(sampleRate, 0, 4);
 
-        Byte[] byteRate = BitConverter.GetBytes(hz * channels * 2); // sampleRate * bytesPerSample*number of channels, here 44100*2*2
+        Byte[] byteRate = BitConverter.GetBytes(hz * channels * 2);
         fileStream.Write(byteRate, 0, 4);
 
         UInt16 blockAlign = (ushort)(channels * 2);
@@ -195,7 +240,5 @@ public static class SavWav
 
         Byte[] subChunk2 = BitConverter.GetBytes(samples * channels * 2);
         fileStream.Write(subChunk2, 0, 4);
-
-        //		fileStream.Close();
     }
 }

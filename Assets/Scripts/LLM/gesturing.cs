@@ -7,6 +7,22 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
+/// <summary>
+/// 身体动作控制器，负责处理病人的手势和表情动画
+/// </summary>
+/// <remarks>
+/// C#特性说明：
+/// - MonoBehaviour：Unity脚本基类
+/// - 协程（Coroutine）：使用IEnumerator和yield return
+/// - 字典集合（Dictionary）：存储聊天消息
+/// - 正则表达式（Regex）：提取情绪代码
+/// - JSON序列化：使用JsonConvert处理JSON数据
+/// - 字符串插值：$""语法
+/// - Unity生命周期方法：Start()
+/// - 匿名类型：创建临时对象
+/// - using语句：自动资源管理（UnityWebRequest）
+/// - 泛型：List<T>、Dictionary<K,V>
+/// </remarks>
 public class BodyMove : MonoBehaviour
 {
     private string chatApiUrl = "https://api.openai.com/v1/chat/completions";
@@ -22,6 +38,9 @@ public class BodyMove : MonoBehaviour
         InitializeChat();
     }
 
+    /// <summary>
+    /// 初始化聊天消息
+    /// </summary>
     private void InitializeChat()
     {
         string emotionInstructions = 
@@ -59,6 +78,10 @@ public class BodyMove : MonoBehaviour
         PrintChatMessage(chatMessages);
     }
 
+    /// <summary>
+    /// 玩家响应处理
+    /// </summary>
+    /// <param name="playerMessage">玩家消息</param>
     public void PlayerResponds(string playerMessage)
     {
         chatMessages.Add(new Dictionary<string, string>() { { "role", "user" }, { "content", playerMessage } });
@@ -67,6 +90,9 @@ public class BodyMove : MonoBehaviour
         
     }
 
+    /// <summary>
+    /// 发送聊天请求的协程
+    /// </summary>
     private IEnumerator SendChatRequest()
     {
         var requestObject = new
@@ -109,6 +135,10 @@ public class BodyMove : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 根据消息内容更新动画
+    /// </summary>
+    /// <param name="message">消息内容</param>
     private void UpdateAnimation(string message)
     {
         Match match = Regex.Match(message, @"\[([012])\]$");
@@ -135,6 +165,11 @@ public class BodyMove : MonoBehaviour
             animationController.PlayIdle();
         }
     }
+
+    /// <summary>
+    /// 打印聊天消息
+    /// </summary>
+    /// <param name="messages">消息列表</param>
     public static void PrintChatMessage(List<Dictionary<string, string>> messages)
     {
         Debug.Log("══════════════ Chat Messages Log ══════════════");
@@ -144,7 +179,7 @@ public class BodyMove : MonoBehaviour
             string role = message["role"];
             string content = message["content"];
             
-            // Extract emotion code if present
+            // 提取情绪代码（如果存在）
             string emotionCode = "";
             var match = System.Text.RegularExpressions.Regex.Match(content, @"\[([012])\]$");
             if (match.Success)

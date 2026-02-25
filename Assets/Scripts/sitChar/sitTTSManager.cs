@@ -8,324 +8,338 @@ using UnityEngine.Audio;
 using System.Collections;
 using Newtonsoft.Json;
 using System.Text;
-// for animation
 using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
 
+/// <summary>
+/// 坐姿角色文本转语音管理器，负责将文本转换为语音并播放，集成Qwen TTS API和情绪动画
+/// </summary>
+/// <remarks>
+/// C#特性说明：
+/// - MonoBehaviour：Unity脚本基类
+/// - 单例模式（Singleton）：使用静态Instance属性确保全局唯一
+/// - Unity生命周期方法：Awake()、Start()
+/// - [SerializeField]特性：序列化字段，在Inspector中可编辑
+/// - [Tooltip]特性：在Inspector中显示提示文本
+/// - async/await异步编程：用于异步HTTP请求
+/// - Task异步操作：表示异步操作
+/// - using语句：自动资源管理（HttpClient、FileStream、UnityWebRequest）
+/// - 异常处理：try-catch块
+/// - 正则表达式（Regex）：提取情绪代码
+/// - JSON序列化：使用JsonConvert和JObject处理JSON数据
+/// - 字符串插值：$""语法构建字符串
+/// - 泛型：HttpClient<T>、Task<T>、FindObjectOfType<T>()、GetComponent<T>()
+/// - [Serializable]特性：标记类可被序列化
+/// - 空条件运算符：?. 避免空引用异常
+/// - Unity音频系统：AudioSource、AudioClip
+/// - Unity音频类型：AudioType.MPEG
+/// - 协程（Coroutine）：使用IEnumerator和yield return实现异步操作
+/// - 文件I/O：Path.Combine、File.WriteAllBytes、File.Delete
+/// - UnityWebRequestMultimedia：Unity多媒体HTTP请求
+/// - Environment.GetEnvironmentVariable：获取环境变量
+/// </remarks>
 public class sitTTSManager : MonoBehaviour
 {
-    public static sitTTSManager Instance { get; private set; } 
+    // 单例模式：静态实例，确保全局唯一
+    public static sitTTSManager Instance { get; private set; }
 
-    public AudioSource audioSource; // Reference to the AudioSource where the speech will be played.
+    // 公共字段：音频源组件
+    public AudioSource audioSource;
 
-    // private string openAIApiKey; // API key for OpenAI
-    private string elevenLabsApiKey; // API key for Eleven Labs
-    // private static readonly string ttsEndpoint = "https://api.openai.com/v1/audio/speech"; // Endpoint for TTS
-    private static readonly string ttsEndpoint = "https://api.elevenlabs.io/v1/text-to-speech";
-    private const bool deleteCachedFile = true; // Flag to determine if the audio file should be deleted after playing
-    // for animation
+    // API配置
+    [Tooltip("Your Alibaba Cloud Qwen API Key (sk-xxxx)")]
+    [SerializeField] private string qwenApiKey = "";
+
+    // API端点和配置
+    private const string TtsEndpoint = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-to-speech";
+    private const bool deleteCachedFile = true;
+
+    // 动画控制器组件引用
     private sitCharacterAnimationController animationController;
-    private BloodEffectController bloodEffectController;  
+    private BloodEffectController bloodEffectController;
     private BloodTextController bloodTextController;
+
+    /// <summary>
+    /// Unity生命周期方法：对象创建时调用
+    /// </summary>
     void Awake()
     {
+        // 单例模式：确保只有一个sitTTSManager实例
         if (Instance == null)
         {
             Instance = this;
-            // If you need to maintain this during scene transitions, please uncomment the following line.
-            // DontDestroyOnLoad(gameObject);
         }
         else
         {
+            // 如果已存在实例，销毁当前对象
             Destroy(gameObject);
         }
     }
 
+    /// <summary>
+    /// Unity生命周期方法：初始化时调用
+    /// </summary>
     void Start()
     {
-        // Load the API key securely
-        // openAIApiKey = EnvironmentLoader.GetEnvVariable("OPENAI_API_KEY");
-        // Debug.Log($"[start]API Key loaded: {!string.IsNullOrEmpty(openAIApiKey)}"); // Will print true/false without exposing the key
-        elevenLabsApiKey = EnvironmentLoader.GetEnvVariable("ELEVENLABS_API_KEY");
-        Debug.Log("TTS Manager: API key loaded");
-
-        if (string.IsNullOrEmpty(elevenLabsApiKey)) // openAIApiKey
+        // 如果Inspector没有配置，尝试从环境变量加载（可选）
+        if (string.IsNullOrEmpty(qwenApiKey))
         {
-            Debug.LogError("TTS Manager: API key is missing! Make sure *_API_KEY environment variable is set.");
+            qwenApiKey = Environment.GetEnvironmentVariable("QWEN_API_KEY");
+        }
+
+        // 验证API密钥
+        if (string.IsNullOrEmpty(qwenApiKey))
+        {
+            Debug.LogError("TTS Manager: Qwen API key is missing! Please set it in the Inspector or as QWEN_API_KEY environment variable.");
             return;
         }
-        
+
+        // 获取组件引用
         animationController = GetComponent<sitCharacterAnimationController>();
-        
-        // Find the blood effect in the UI
-        bloodEffectController = GameObject.FindObjectOfType<BloodEffectController>();
+        bloodEffectController = FindObjectOfType<BloodEffectController>();
+        bloodTextController = FindObjectOfType<BloodTextController>();
+
+        // 验证必要组件
         if (bloodEffectController == null)
-        {
-            Debug.LogError("BloodEffectController not found in the scene. Make sure it exists in the UI!");
-        }
-        bloodTextController = GameObject.FindObjectOfType<BloodTextController>();
+            Debug.LogError("BloodEffectController not found!");
         if (bloodTextController == null)
-        {
-            Debug.LogError("BloodTextController not found in the scene. Make sure it exists in the UI!");
-        }
+            Debug.LogError("BloodTextController not found!");
     }
 
-    // Public method to be called to convert text to speech
+    /// <summary>
+    /// 公共方法：使用可选情绪代码将文本转换为语音，如"Hello [3]"
+    /// </summary>
+    /// <param name="text">要转换的文本</param>
     public async void ConvertTextToSpeech(string text)
     {
+        // 输入验证
         if (string.IsNullOrEmpty(text))
         {
-            Debug.Log("TTS Manager: No text provided for TTS");
+            Debug.LogWarning("TTS Manager: Empty text provided.");
             return;
         }
 
-        // Strip emotion code for TTS but keep original text for animation
+        // 提取情绪代码用于动画，但将其从TTS输入中剥离
         string ttsText = text;
         Match match = Regex.Match(text, @"\[([0-9]|10)\]$");
         if (match.Success)
         {
-            ttsText = text.Substring(0, text.Length - 3).Trim();
+            ttsText = text.Substring(0, text.Length - match.Value.Length).Trim();
         }
 
-        // Get audio data from OpenAI's TTS service
-        // byte[] audioData = await GetTTSAudio(ttsText, "tts-1", "nova", "mp3", 1.0f);
-        // if (audioData != null)
-        // {
-        //     ProcessAudioBytes(audioData, text); // Pass original text for animation
-        // }
-        // else
-        // {
-        //     Debug.LogError("TTS Manager: Failed to get audio data");
-        // }
-        byte[] audioData = await GetElevenLabsTTSAudio(
-            ttsText,
-            "vcnmLMBATKgMN0IbjtXf", // voice ID
-            "eleven_multilingual_v2", // Default model
-            0.4f,   // stability
-            0.75f,  // similarity_boost
-            0.2f    // style_exaggeration
-        );
-        
+        // 从Qwen TTS获取音频数据
+        byte[] audioData = await GetQwenTTSAudio(ttsText, voice: "longxiaochun", speed: 1.0f);
+
         if (audioData != null)
         {
-            ProcessAudioBytes(audioData, text); // Pass original text for animation
+            ProcessAudioBytes(audioData, text); // 传递原始文本用于动画
         }
         else
         {
-            Debug.LogError("TTS Manager: Failed to get audio data from ElevenLabs");
+            Debug.LogError("TTS Manager: Failed to get audio from Qwen TTS.");
         }
     }
 
-    // Method to get TTS audio from OpenAI
-    // private async Task<byte[]> GetTTSAudio(string inputText, string model, string voice, string responseFormat = "mp3", float speed = 1.0f)
-    // {
-    //     using (HttpClient client = new HttpClient())
-    //     {
-    //         try 
-    //         {
-    //             // Make sure to include "Bearer " prefix with the API key
-    //             client.DefaultRequestHeaders.Clear(); // Clear any existing headers
-    //             client.DefaultRequestHeaders.Add("Authorization", $"Bearer {openAIApiKey.Trim()}");
-                
-    //             Debug.Log("Authorization header set"); // Confirm header is being set
-                
-    //             var requestBody = new TTSRequest
-    //             {
-    //                 model = model,
-    //                 input = inputText,
-    //                 voice = voice,
-    //                 response_format = responseFormat,
-    //                 speed = speed
-    //             };
-
-    //             string jsonContent = JsonConvert.SerializeObject(requestBody);
-    //             Debug.Log($"Request body: {jsonContent}"); // Check the request body
-                
-    //             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-    //             // Send the POST request
-    //             HttpResponseMessage response = await client.PostAsync(ttsEndpoint, content);
-                
-    //             Debug.Log($"Response status: {response.StatusCode}"); // Log the response status
-
-    //             if (response.IsSuccessStatusCode)
-    //             {
-    //                 return await response.Content.ReadAsByteArrayAsync();
-    //             }
-    //             else
-    //             {
-    //                 string errorResponse = await response.Content.ReadAsStringAsync();
-    //                 Debug.LogError($"Error with TTS API: {response.StatusCode} - {response.ReasonPhrase}\nDetails: {errorResponse}");
-    //                 return null;
-    //             }
-    //         }
-    //         catch (Exception ex)
-    //         {
-    //             Debug.LogError($"Exception in GetTTSAudio: {ex.Message}\nStack trace: {ex.StackTrace}");
-    //             return null;
-    //         }
-    //     }
-    // }
-    private async Task<byte[]> GetElevenLabsTTSAudio(
-        string inputText, 
-        string voiceId, 
-        string modelId, 
-        float stability = 0.4f, 
-        float similarityBoost = 0.75f, 
-        float styleExaggeration = 0.3f)
+    /// <summary>
+    /// 调用Qwen TTS API
+    /// </summary>
+    /// <param name="text">要转换的文本</param>
+    /// <param name="voice">语音名称</param>
+    /// <param name="speed">播放速度</param>
+    /// <returns>音频字节数组</returns>
+    private async Task<byte[]> GetQwenTTSAudio(string text, string voice = "Cherry", float speed = 1.0f)
     {
-        string endpoint = $"{ttsEndpoint}/{voiceId}";
-        
-        using (HttpClient client = new HttpClient())
+        // ✅ 使用aigc端点
+        var url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
+
+        string apiKey = qwenApiKey;
+        if (string.IsNullOrEmpty(apiKey))
         {
+            Debug.LogError("TTS Manager: Missing API key!");
+            return null;
+        }
+
+        // using语句：自动资源管理
+        using (var httpClient = new HttpClient())
+        {
+            httpClient.DefaultRequestHeaders.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+
+            // ✅ 完整参数：包括language_type（Python示例中有）
+            var payload = new
+            {
+                model = "qwen3-tts-flash",
+                task = "text_to_speech", // 添加这一行
+                input = new
+                {
+                    text = text.Trim()
+                },
+                parameters = new
+                {
+                    voice = voice,
+                    language_type = "Chinese",
+                    speed = speed
+                }
+            };
+
+            string json = JsonConvert.SerializeObject(payload);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
             try
             {
-                Debug.Log($"API Key length: {elevenLabsApiKey?.Length}");
-                client.DefaultRequestHeaders.Clear();
-                client.DefaultRequestHeaders.Add("xi-api-key", elevenLabsApiKey.Trim());
-                Debug.Log("Headers set: xi-api-key header present: " + client.DefaultRequestHeaders.Contains("xi-api-key"));
+                var response = await httpClient.PostAsync(url, content);
+                string responseText = await response.Content.ReadAsStringAsync();
 
-                // Create the request body
-                var requestBody = new ElevenLabsTTSRequest
+                if (!response.IsSuccessStatusCode)
                 {
-                    text = inputText,
-                    model_id = modelId,
-                    voice_settings = new VoiceSettings
-                    {
-                        stability = stability,
-                        similarity_boost = similarityBoost,
-                        style_exaggeration = styleExaggeration
-                    }
-                };
-
-                // Serialize the request body to JSON
-                string jsonContent = JsonConvert.SerializeObject(requestBody);
-                var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                // Send the POST request
-                HttpResponseMessage response = await client.PostAsync(endpoint, content);
-
-                if (response.IsSuccessStatusCode)
-                {
-                    // If the request is successful, read the byte array of the audio data
-                    return await response.Content.ReadAsByteArrayAsync();
-                }
-                else
-                {
-                    // Log error if the request fails
-                    string errorResponse = await response.Content.ReadAsStringAsync();
-                    Debug.LogError("Error with ElevenLabs TTS API: " + response.ReasonPhrase + "\nDetails: " + errorResponse);
+                    Debug.LogError($"TTS Request Failed: {response.StatusCode} - {responseText}");
                     return null;
                 }
+
+                // ✅ 解析JSON获取audio.url
+                var responseObject = JObject.Parse(responseText);
+                var audioUrl = responseObject["output"]?["audio"]?["url"]?.ToString();
+
+                if (string.IsNullOrEmpty(audioUrl))
+                {
+                    Debug.LogError("TTS: No audio URL in response. Full response: " + responseText);
+                    return null;
+                }
+
+                // ✅ 第二次请求：下载音频
+                Debug.Log($"Downloading audio from: {audioUrl}");
+                return await httpClient.GetByteArrayAsync(audioUrl);
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Exception in GetElevenLabsTTSAudio: {ex.Message}\nStack trace: {ex.StackTrace}");
+                Debug.LogError($"TTS Exception: {ex.Message}\n{ex.StackTrace}");
                 return null;
             }
         }
     }
 
-    // Method to process and play the audio bytes received
+    /// <summary>
+    /// 处理音频字节数据并启动播放
+    /// </summary>
+    /// <param name="audioData">音频字节数组</param>
+    /// <param name="messageContent">消息内容（用于情绪动画）</param>
     private void ProcessAudioBytes(byte[] audioData, string messageContent)
     {
-        // Save the audio data as a .mp3 file locally
-        string filePath = Path.Combine(Application.persistentDataPath, "audio.mp3");
+        string filePath = Path.Combine(Application.persistentDataPath, "tts_output.mp3");
         File.WriteAllBytes(filePath, audioData);
-
-        // Start coroutine to load and play the audio file
         StartCoroutine(LoadAndPlayAudio(filePath, messageContent));
     }
 
-    // Coroutine to load and play the audio file
+    /// <summary>
+    /// 加载并播放音频文件的协程
+    /// </summary>
+    /// <param name="filePath">音频文件路径</param>
+    /// <param name="messageContent">消息内容（用于情绪动画）</param>
     private IEnumerator LoadAndPlayAudio(string filePath, string messageContent)
     {
-        // Create a UnityWebRequest to load the audio file
+        // UnityWebRequestMultimedia：Unity多媒体HTTP请求
         using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + filePath, AudioType.MPEG);
         yield return www.SendWebRequest();
 
         if (www.result == UnityWebRequest.Result.Success)
         {
-            // If the file is successfully loaded, get the audio clip and play it
-            AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
-            // Debug.Log("Audio clip loaded successfully");
-            audioSource.clip = audioClip;
+            AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
+            audioSource.clip = clip;
             audioSource.Play();
             UpdateAnimation(messageContent);
         }
         else
         {
-            // Log error if the file loading fails
-            Debug.LogError("Audio file loading error: " + www.error);
+            Debug.LogError("Failed to load audio file: " + www.error);
         }
 
-        // Optionally delete the file after playing
-        if (deleteCachedFile)
+        // 可选：删除缓存文件
+        if (deleteCachedFile && File.Exists(filePath))
         {
             File.Delete(filePath);
         }
     }
 
-    // Nested class to structure the TTS request body
-    // public class TTSRequest
-    // {
-    //     public string model { get; set; }
-    //     public string input { get; set; }
-    //     public string voice { get; set; }
-    //     public string response_format { get; set; }
-    //     public float speed { get; set; }
-    // }
-
+    // --- Qwen TTS数据模型 ---
+    /// <summary>
+    /// Qwen TTS请求数据结构
+    /// </summary>
     [Serializable]
-    public class ElevenLabsTTSRequest
+    public class QwenTTSRequest
     {
-        public string text { get; set; }
-        public string model_id { get; set; }
-        public VoiceSettings voice_settings { get; set; }
-        // public string xi_api_key { get; set; }
+        public string model = "qwen3-tts-flash";
+        public Input input;
+        public Parameters parameters;
     }
 
+    /// <summary>
+    /// 输入数据结构
+    /// </summary>
     [Serializable]
-    public class VoiceSettings
+    public class Input
     {
-        public float stability { get; set; }
-        public float similarity_boost { get; set; }
-        public float style_exaggeration { get; set; }
+        public string text;
     }
 
-        private void UpdateAnimation(string message)
+    /// <summary>
+    /// 参数数据结构
+    /// </summary>
+    [Serializable]
+    public class Parameters
     {
+        public string voice = "Chrrey";
+        public float speed = 1.0f;
+        // Note: Qwen does NOT support stability/similarity/style
+    }
+
+    /// <summary>
+    /// Qwen TTS响应数据结构
+    /// </summary>
+    [Serializable]
+    public class QwenTTSResponse
+    {
+        public Output output;
+    }
+
+    /// <summary>
+    /// 输出数据结构
+    /// </summary>
+    [Serializable]
+    public class Output
+    {
+        public string audio; // base64-encoded MP3
+    }
+
+    // --- 动画逻辑 ---
+    /// <summary>
+    /// 根据消息内容更新动画
+    /// </summary>
+    /// <param name="message">消息内容</param>
+    private void UpdateAnimation(string message)
+    {
+        // 正则表达式：提取情绪代码
         Match match = Regex.Match(message, @"\[([0-5])\]$");
         if (match.Success)
         {
             int emotionCode = int.Parse(match.Groups[1].Value);
-            switch(emotionCode)
+            switch (emotionCode)
             {
-                case 0:
-                    animationController.PlayBend();
-                    break;
-                case 1:
-                    animationController.PlayRubArm();
-                    break;
-                case 2:
-                    animationController.PlaySad();
-                    break;
-                case 3:
-                    animationController.PlayThumbUp();
-                    break;
+                case 0: animationController.PlayBend(); break;
+                case 1: animationController.PlayRubArm(); break;
+                case 2: animationController.PlaySad(); break;
+                case 3: animationController.PlayThumbUp(); break;
                 case 4:
                     animationController.PlayBloodPressure();
-                    bloodEffectController.SetBloodVisibility(true);
-                    bloodTextController.SetBloodTextVisibility(true);
+                    bloodEffectController?.SetBloodVisibility(true);
+                    bloodTextController?.SetBloodTextVisibility(true);
                     break;
                 default:
-                    Debug.LogWarning($"Invalid emotion code: {emotionCode}");
                     animationController.PlayIdle();
                     break;
             }
         }
         else
         {
-            Debug.LogWarning($"No emotion code found: {message}");
             animationController.PlayIdle();
         }
     }

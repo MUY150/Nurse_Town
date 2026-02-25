@@ -8,6 +8,24 @@ using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
+/// <summary>
+/// 评分管理器，负责记录对话回合并使用GPT-4进行完整对话评估
+/// </summary>
+/// <remarks>
+/// C#特性说明：
+/// - MonoBehaviour：Unity脚本基类
+/// - 单例模式（Singleton）：使用静态Instance字段
+/// - 协程（Coroutine）：使用IEnumerator和yield return
+/// - 列表集合（List）：存储对话回合
+/// - StringBuilder：高效字符串构建
+/// - [Serializable]特性：标记类可被序列化
+/// - 属性（Property）：自动属性
+/// - 泛型：List<T>、Dictionary<K,V>
+/// - Unity生命周期方法：Awake()、Update()
+/// - 输入系统：Input.GetKeyDown检测按键
+/// - JSON序列化：JsonConvert处理JSON数据
+/// - 字符串插值：$""语法
+/// </remarks>
 public class ScoreManager : MonoBehaviour
 {
     public static ScoreManager Instance;
@@ -33,12 +51,19 @@ public class ScoreManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 初始化评分管理器
+    /// </summary>
+    /// <param name="scenario">场景名称</param>
     public void Initialize(string scenario)
     {
         currentScenario = scenario;
         LoadScoringPrompt();
     }
 
+    /// <summary>
+    /// 从文件加载评分提示词
+    /// </summary>
     private void LoadScoringPrompt()
     {
         string promptPath = Path.Combine(Application.streamingAssetsPath, "Prompts", currentScenario, "scoringPrompt.txt");
@@ -52,6 +77,11 @@ public class ScoreManager : MonoBehaviour
         Debug.Log("Scoring prompt loaded successfully.");
     }
 
+    /// <summary>
+    /// 记录对话回合
+    /// </summary>
+    /// <param name="patientResponse">病人响应</param>
+    /// <param name="nurseResponse">护士响应</param>
     public void RecordTurn(string patientResponse, string nurseResponse)
     {
         conversationTurns.Add(new ConversationTurn
@@ -62,6 +92,9 @@ public class ScoreManager : MonoBehaviour
         Debug.Log($"Turn {conversationTurns.Count} recorded.");
     }
 
+    /// <summary>
+    /// 提交完整对话进行评估
+    /// </summary>
     public void SubmitEvaluation()
     {
         if (conversationTurns.Count == 0)
@@ -72,6 +105,9 @@ public class ScoreManager : MonoBehaviour
         StartCoroutine(EvaluateFullConversationCoroutine());
     }
 
+    /// <summary>
+    /// 评估完整对话的协程
+    /// </summary>
     private IEnumerator EvaluateFullConversationCoroutine()
     {
         if (string.IsNullOrEmpty(scoringPrompt))
@@ -143,6 +179,9 @@ public class ScoreManager : MonoBehaviour
     }
 }
 
+/// <summary>
+/// 对话回合数据类
+/// </summary>
 [Serializable]
 public class ConversationTurn
 {
@@ -150,6 +189,9 @@ public class ConversationTurn
     public string Nurse;
 }
 
+/// <summary>
+/// 动态评估结果数据类
+/// </summary>
 [Serializable]
 public class DynamicEvaluationResult
 {
@@ -159,6 +201,9 @@ public class DynamicEvaluationResult
     public string overallExplanation;
 }
 
+/// <summary>
+/// 评分标准数据类
+/// </summary>
 [Serializable]
 public class CriterionScore
 {

@@ -4,29 +4,45 @@ using System.IO;
 using System;
 
 /// <summary>
-/// WAV utility for recording and audio playback functions in Unity.
-/// Version: 1.0 alpha 1
+/// Unity中的WAV文件录制和音频播放功能工具类
+/// 版本：1.0 alpha 1
 ///
-/// - Use "ToAudioClip" method for loading wav file / bytes.
-/// Loads .wav (PCM uncompressed) files at 8,16,24 and 32 bits and converts data to Unity's AudioClip.
+/// - 使用"ToAudioClip"方法加载wav文件/字节数据
+/// 加载.wav（PCM未压缩）文件，支持8、16、24和32位，并将数据转换为Unity的AudioClip
 ///
-/// - Use "FromAudioClip" method for saving wav file / bytes.
-/// Converts an AudioClip's float data into wav byte array at 16 bit.
+/// - 使用"FromAudioClip"方法保存wav文件/字节数据
+/// 将AudioClip的float数据转换为16位wav字节数组
 /// </summary>
 /// <remarks>
-/// For documentation and usage examples: https://github.com/deadlyfingers/UnityWav
+/// C#特性说明：
+/// - 静态类（static class）：不能实例化，只包含静态成员
+/// - 常量（const）：固定不变的值
+/// - 泛型：List<T>动态数组、BitConverter.ToXxx<T>()
+/// - 文件I/O：FileStream、FileMode、FileAccess、SeekOrigin、Path.Combine、Directory.CreateDirectory、File.WriteAllBytes、File.ReadAllBytes
+/// - 二进制操作：BitConverter、Byte[]、Int16、UInt16、Int32、UInt32、sbyte
+/// - using语句：自动资源管理（MemoryStream）
+/// - 字符串操作：Encoding.ASCII.GetBytes()、string.Format()
+/// - 数组操作：Array、Buffer.BlockCopy()
+/// - 数学函数：BitConverter.ToInt32()、BitConverter.ToInt16()、BitConverter.ToUInt16()
+/// - switch语句：多分支选择结构
+/// - 异常处理：try-catch块、throw抛出异常
+/// - Debug.AssertFormat()：断言调试
+/// - MemoryStream：内存流，用于在内存中处理字节数据
+/// - Application.persistentDataPath：Unity持久化数据路径
+/// - AudioClip.Create()：创建Unity音频剪辑
+/// - AudioClip.SetData()：设置音频数据
+/// - AudioClip.GetData()：获取音频数据
 /// </remarks>
-
 public class WavUtility
 {
-    // Force save as 16-bit .wav
+    // 强制保存为16位.wav
     const int BlockSize_16Bit = 2;
 
     /// <summary>
-    /// Load PCM format *.wav audio file (using Unity's Application data path) and convert to AudioClip.
+    /// 加载PCM格式*.wav音频文件（使用Unity的Application数据路径）并转换为AudioClip
     /// </summary>
-    /// <returns>The AudioClip.</returns>
-    /// <param name="filePath">Local file path to .wav file</param>
+    /// <param name="filePath">.wav文件的本地文件路径</param>
+    /// <returns>AudioClip</returns>
     public static AudioClip ToAudioClip(string filePath)
     {
         if (!filePath.StartsWith(Application.persistentDataPath) && !filePath.StartsWith(Application.dataPath))
@@ -34,32 +50,37 @@ public class WavUtility
             Debug.LogWarning("This only supports files that are stored using Unity's Application data path. \nTo load bundled resources use 'Resources.Load(\"filename\") typeof(AudioClip)' method. \nhttps://docs.unity3d.com/ScriptReference/Resources.Load.html");
             return null;
         }
+        // 文件I/O：读取文件的所有字节
         byte[] fileBytes = File.ReadAllBytes(filePath);
         return ToAudioClip(fileBytes, 0);
     }
 
+    /// <summary>
+    /// 将字节数组转换为AudioClip
+    /// </summary>
+    /// <param name="fileBytes">WAV文件字节数组</param>
+    /// <param name="offsetSamples">偏移采样数</param>
+    /// <param name="name">AudioClip名称</param>
+    /// <returns>AudioClip</returns>
     public static AudioClip ToAudioClip(byte[] fileBytes, int offsetSamples = 0, string name = "wav")
     {
-        //string riff = Encoding.ASCII.GetString (fileBytes, 0, 4);
-        //string wave = Encoding.ASCII.GetString (fileBytes, 8, 4);
+        // 二进制操作：从字节数组中读取数据
         int subchunk1 = BitConverter.ToInt32(fileBytes, 16);
         UInt16 audioFormat = BitConverter.ToUInt16(fileBytes, 20);
 
-        // NB: Only uncompressed PCM wav files are supported.
+        // 仅支持未压缩的PCM wav文件
         string formatCode = FormatCode(audioFormat);
         Debug.AssertFormat(audioFormat == 1 || audioFormat == 65534, "Detected format code '{0}' {1}, but only PCM and WaveFormatExtensable uncompressed formats are currently supported.", audioFormat, formatCode);
 
         UInt16 channels = BitConverter.ToUInt16(fileBytes, 22);
         int sampleRate = BitConverter.ToInt32(fileBytes, 24);
-        //int byteRate = BitConverter.ToInt32 (fileBytes, 28);
-        //UInt16 blockAlign = BitConverter.ToUInt16 (fileBytes, 32);
         UInt16 bitDepth = BitConverter.ToUInt16(fileBytes, 34);
 
         int headerOffset = 16 + 4 + subchunk1 + 4;
         int subchunk2 = BitConverter.ToInt32(fileBytes, headerOffset);
-        //Debug.LogFormat ("riff={0} wave={1} subchunk1={2} format={3} channels={4} sampleRate={5} byteRate={6} blockAlign={7} bitDepth={8} headerOffset={9} subchunk2={10} filesize={11}", riff, wave, subchunk1, formatCode, channels, sampleRate, byteRate, blockAlign, bitDepth, headerOffset, subchunk2, fileBytes.Length);
 
         float[] data;
+        // switch语句：根据位深度选择转换方法
         switch (bitDepth)
         {
             case 8:
@@ -75,16 +96,21 @@ public class WavUtility
                 data = Convert32BitByteArrayToAudioClipData(fileBytes, headerOffset, subchunk2);
                 break;
             default:
+                // 异常处理：抛出异常
                 throw new Exception(bitDepth + " bit depth is not supported.");
         }
 
+        // Unity API：创建AudioClip
         AudioClip audioClip = AudioClip.Create(name, data.Length, (int)channels, sampleRate, false);
         audioClip.SetData(data, 0);
         return audioClip;
     }
 
-    #region wav file bytes to Unity AudioClip conversion methods
+    #region wav文件字节数组到Unity AudioClip转换方法
 
+    /// <summary>
+    /// 将8位字节数组转换为AudioClip数据
+    /// </summary>
     private static float[] Convert8BitByteArrayToAudioClipData(byte[] source, int headerOffset, int dataSize)
     {
         int wavSize = BitConverter.ToInt32(source, headerOffset);
@@ -105,13 +131,16 @@ public class WavUtility
         return data;
     }
 
+    /// <summary>
+    /// 将16位字节数组转换为AudioClip数据
+    /// </summary>
     private static float[] Convert16BitByteArrayToAudioClipData(byte[] source, int headerOffset, int dataSize)
     {
         int wavSize = BitConverter.ToInt32(source, headerOffset);
         headerOffset += sizeof(int);
         Debug.AssertFormat(wavSize > 0 && wavSize == dataSize, "Failed to get valid 16-bit wav size: {0} from data bytes: {1} at offset: {2}", wavSize, dataSize, headerOffset);
 
-        int x = sizeof(Int16); // block size = 2
+        int x = sizeof(Int16); // 块大小 = 2
         int convertedSize = wavSize / x;
 
         float[] data = new float[convertedSize];
@@ -132,20 +161,24 @@ public class WavUtility
         return data;
     }
 
+    /// <summary>
+    /// 将24位字节数组转换为AudioClip数据
+    /// </summary>
     private static float[] Convert24BitByteArrayToAudioClipData(byte[] source, int headerOffset, int dataSize)
     {
         int wavSize = BitConverter.ToInt32(source, headerOffset);
         headerOffset += sizeof(int);
         Debug.AssertFormat(wavSize > 0 && wavSize == dataSize, "Failed to get valid 24-bit wav size: {0} from data bytes: {1} at offset: {2}", wavSize, dataSize, headerOffset);
 
-        int x = 3; // block size = 3
+        int x = 3; // 块大小 = 3
         int convertedSize = wavSize / x;
 
         int maxValue = Int32.MaxValue;
 
         float[] data = new float[convertedSize];
 
-        byte[] block = new byte[sizeof(int)]; // using a 4 byte block for copying 3 bytes, then copy bytes with 1 offset
+        // 数组操作：使用4字节块复制3字节，然后复制带有1偏移量的字节
+        byte[] block = new byte[sizeof(int)];
 
         int offset = 0;
         int i = 0;
@@ -162,13 +195,16 @@ public class WavUtility
         return data;
     }
 
+    /// <summary>
+    /// 将32位字节数组转换为AudioClip数据
+    /// </summary>
     private static float[] Convert32BitByteArrayToAudioClipData(byte[] source, int headerOffset, int dataSize)
     {
         int wavSize = BitConverter.ToInt32(source, headerOffset);
         headerOffset += sizeof(int);
         Debug.AssertFormat(wavSize > 0 && wavSize == dataSize, "Failed to get valid 32-bit wav size: {0} from data bytes: {1} at offset: {2}", wavSize, dataSize, headerOffset);
 
-        int x = sizeof(float); //  block size = 4
+        int x = sizeof(float); //  块大小 = 4
         int convertedSize = wavSize / x;
 
         Int32 maxValue = Int32.MaxValue;
@@ -191,81 +227,99 @@ public class WavUtility
 
     #endregion
 
+    /// <summary>
+    /// 将AudioClip转换为字节数组
+    /// </summary>
+    /// <param name="audioClip">AudioClip</param>
+    /// <returns>字节数组</returns>
     public static byte[] FromAudioClip(AudioClip audioClip)
     {
         string file;
         return FromAudioClip(audioClip, out file, false);
     }
 
+    /// <summary>
+    /// 将AudioClip转换为字节数组并可选保存为文件
+    /// </summary>
+    /// <param name="audioClip">AudioClip</param>
+    /// <param name="filepath">输出文件路径</param>
+    /// <param name="saveAsFile">是否保存为文件</param>
+    /// <param name="dirname">目录名称</param>
+    /// <returns>字节数组</returns>
     public static byte[] FromAudioClip(AudioClip audioClip, out string filepath, bool saveAsFile = true, string dirname = "recordings")
     {
+        // using语句：自动资源管理
         MemoryStream stream = new MemoryStream();
 
         const int headerSize = 44;
 
-        // get bit depth
-        UInt16 bitDepth = 16; //BitDepth (audioClip);
+        // 获取位深度
+        UInt16 bitDepth = 16;
 
-        // NB: Only supports 16 bit
-        //Debug.AssertFormat (bitDepth == 16, "Only converting 16 bit is currently supported. The audio clip data is {0} bit.", bitDepth);
+        // 总文件大小 = 44字节头部格式 + audioClip.samples * 因子（由于float到Int16/sbyte的转换）
+        int fileSize = audioClip.samples * BlockSize_16Bit + headerSize;
 
-        // total file size = 44 bytes for header format and audioClip.samples * factor due to float to Int16 / sbyte conversion
-        int fileSize = audioClip.samples * BlockSize_16Bit + headerSize; // BlockSize (bitDepth)
-
-        // chunk descriptor (riff)
+        // 写入块描述符（riff）
         WriteFileHeader(ref stream, fileSize);
-        // file header (fmt)
+        // 写入文件头（fmt）
         WriteFileFormat(ref stream, audioClip.channels, audioClip.frequency, bitDepth);
-        // data chunks (data)
+        // 写入数据块（data）
         WriteFileData(ref stream, audioClip, bitDepth);
 
         byte[] bytes = stream.ToArray();
 
-        // Validate total bytes
+        // 验证总字节数
         Debug.AssertFormat(bytes.Length == fileSize, "Unexpected AudioClip to wav format byte count: {0} == {1}", bytes.Length, fileSize);
 
-        // Save file to persistant storage location
+        // 保存文件到持久化存储位置
         if (saveAsFile)
         {
+            // 字符串操作：使用string.Format构建路径
             filepath = string.Format("{0}/{1}/{2}.{3}", Application.persistentDataPath, dirname, DateTime.UtcNow.ToString("yyMMdd-HHmmss-fff"), "wav");
             Directory.CreateDirectory(Path.GetDirectoryName(filepath));
             File.WriteAllBytes(filepath, bytes);
-            //Debug.Log ("Auto-saved .wav file: " + filepath);
         }
         else
         {
             filepath = null;
         }
 
+        // 释放资源
         stream.Dispose();
 
         return bytes;
     }
 
-    #region write .wav file functions
+    #region 写入.wav文件函数
 
+    /// <summary>
+    /// 写入WAV文件头
+    /// </summary>
     private static int WriteFileHeader(ref MemoryStream stream, int fileSize)
     {
         int count = 0;
         int total = 12;
 
-        // riff chunk id
+        // riff块ID
         byte[] riff = Encoding.ASCII.GetBytes("RIFF");
         count += WriteBytesToMemoryStream(ref stream, riff, "ID");
 
-        // riff chunk size
-        int chunkSize = fileSize - 8; // total size - 8 for the other two fields in the header
+        // riff块大小
+        int chunkSize = fileSize - 8; // 总大小 - 8（头部的其他两个字段）
         count += WriteBytesToMemoryStream(ref stream, BitConverter.GetBytes(chunkSize), "CHUNK_SIZE");
 
         byte[] wave = Encoding.ASCII.GetBytes("WAVE");
         count += WriteBytesToMemoryStream(ref stream, wave, "FORMAT");
 
-        // Validate header
+        // 验证头部
         Debug.AssertFormat(count == total, "Unexpected wav descriptor byte count: {0} == {1}", count, total);
 
         return count;
     }
 
+    /// <summary>
+    /// 写入WAV文件格式
+    /// </summary>
     private static int WriteFileFormat(ref MemoryStream stream, int channels, int sampleRate, UInt16 bitDepth)
     {
         int count = 0;
@@ -293,18 +347,21 @@ public class WavUtility
 
         count += WriteBytesToMemoryStream(ref stream, BitConverter.GetBytes(bitDepth), "BITS_PER_SAMPLE");
 
-        // Validate format
+        // 验证格式
         Debug.AssertFormat(count == total, "Unexpected wav fmt byte count: {0} == {1}", count, total);
 
         return count;
     }
 
+    /// <summary>
+    /// 写入WAV文件数据
+    /// </summary>
     private static int WriteFileData(ref MemoryStream stream, AudioClip audioClip, UInt16 bitDepth)
     {
         int count = 0;
         int total = 8;
 
-        // Copy float[] data from AudioClip
+        // 从AudioClip复制float[]数据
         float[] data = new float[audioClip.samples * audioClip.channels];
         audioClip.GetData(data, 0);
 
@@ -313,23 +370,27 @@ public class WavUtility
         byte[] id = Encoding.ASCII.GetBytes("data");
         count += WriteBytesToMemoryStream(ref stream, id, "DATA_ID");
 
-        int subchunk2Size = Convert.ToInt32(audioClip.samples * BlockSize_16Bit); // BlockSize (bitDepth)
+        int subchunk2Size = Convert.ToInt32(audioClip.samples * BlockSize_16Bit);
         count += WriteBytesToMemoryStream(ref stream, BitConverter.GetBytes(subchunk2Size), "SAMPLES");
 
-        // Validate header
+        // 验证头部
         Debug.AssertFormat(count == total, "Unexpected wav data id byte count: {0} == {1}", count, total);
 
-        // Write bytes to stream
+        // 将字节写入流
         count += WriteBytesToMemoryStream(ref stream, bytes, "DATA");
 
-        // Validate audio data
+        // 验证音频数据
         Debug.AssertFormat(bytes.Length == subchunk2Size, "Unexpected AudioClip to wav subchunk2 size: {0} == {1}", bytes.Length, subchunk2Size);
 
         return count;
     }
 
+    /// <summary>
+    /// 将AudioClip数据转换为Int16字节数组
+    /// </summary>
     private static byte[] ConvertAudioClipDataToInt16ByteArray(float[] data)
     {
+        // using语句：自动资源管理
         MemoryStream dataStream = new MemoryStream();
 
         int x = sizeof(Int16);
@@ -344,7 +405,7 @@ public class WavUtility
         }
         byte[] bytes = dataStream.ToArray();
 
-        // Validate converted bytes
+        // 验证转换后的字节
         Debug.AssertFormat(data.Length * x == bytes.Length, "Unexpected float[] to Int16 to byte[] size: {0} == {1}", data.Length * x, bytes.Length);
 
         dataStream.Dispose();
@@ -352,21 +413,23 @@ public class WavUtility
         return bytes;
     }
 
+    /// <summary>
+    /// 将字节数组写入内存流
+    /// </summary>
     private static int WriteBytesToMemoryStream(ref MemoryStream stream, byte[] bytes, string tag = "")
     {
         int count = bytes.Length;
         stream.Write(bytes, 0, count);
-        //Debug.LogFormat ("WAV:{0} wrote {1} bytes.", tag, count);
         return count;
     }
 
     #endregion
 
     /// <summary>
-    /// Calculates the bit depth of an AudioClip
+    /// 计算AudioClip的位深度
     /// </summary>
-    /// <returns>The bit depth. Should be 8 or 16 or 32 bit.</returns>
-    /// <param name="audioClip">Audio clip.</param>
+    /// <param name="audioClip">AudioClip</param>
+    /// <returns>位深度，应该是8或16或32位</returns>
     public static UInt16 BitDepth(AudioClip audioClip)
     {
         UInt16 bitDepth = Convert.ToUInt16(audioClip.samples * audioClip.channels * audioClip.length / audioClip.frequency);
@@ -374,26 +437,35 @@ public class WavUtility
         return bitDepth;
     }
 
+    /// <summary>
+    /// 计算每个样本的字节数
+    /// </summary>
     private static int BytesPerSample(UInt16 bitDepth)
     {
         return bitDepth / 8;
     }
 
+    /// <summary>
+    /// 计算块大小
+    /// </summary>
     private static int BlockSize(UInt16 bitDepth)
     {
         switch (bitDepth)
         {
             case 32:
-                return sizeof(Int32); // 32-bit -> 4 bytes (Int32)
+                return sizeof(Int32); // 32位 -> 4字节（Int32）
             case 16:
-                return sizeof(Int16); // 16-bit -> 2 bytes (Int16)
+                return sizeof(Int16); // 16位 -> 2字节（Int16）
             case 8:
-                return sizeof(sbyte); // 8-bit -> 1 byte (sbyte)
+                return sizeof(sbyte); // 8位 -> 1字节（sbyte）
             default:
                 throw new Exception(bitDepth + " bit depth is not supported.");
         }
     }
 
+    /// <summary>
+    /// 获取格式代码
+    /// </summary>
     private static string FormatCode(UInt16 code)
     {
         switch (code)

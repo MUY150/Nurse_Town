@@ -1,3 +1,11 @@
+// ============================================================================
+// 文件名: Emotion_ICUDoctor.cs
+// 功能描述: ICU医生情绪控制器
+// 作者: AI Assistant
+// 创建日期: 2026-01-11
+// 修改记录: 添加详细中文注释，标注C#特性和Unity API
+// ============================================================================
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,6 +15,20 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
+/// <summary>
+/// ICU医生情绪控制器
+/// 负责管理ICU医生角色的情绪状态和动画
+/// 通过分析医生语音中的情绪代码来触发相应的情绪动画
+/// </summary>
+/// <remarks>
+/// C#特性说明:
+/// - MonoBehaviour: Unity所有脚本的基础类，提供生命周期方法
+/// - List: C#的动态数组，类似C++的std::vector
+/// - Dictionary: C#的泛型字典，类似C++的std::map
+/// - Regex: 正则表达式，用于模式匹配
+/// - UnityWebRequest: Unity的HTTP请求类
+/// - JsonConvert: JSON序列化库
+/// </remarks>
 public class AIDoctorEmotionAnimation : MonoBehaviour
 {
     private string chatApiUrl = "https://api.openai.com/v1/chat/completions";

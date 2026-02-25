@@ -11,6 +11,23 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
+/// <summary>
+/// 语音转文本控制器，负责录制音频并使用OpenAI Whisper API进行语音识别
+/// </summary>
+/// <remarks>
+/// C#特性说明：
+/// - MonoBehaviour：Unity脚本基类
+/// - async/await异步编程：用于异步HTTP请求
+/// - Task异步操作：表示异步操作
+/// - using语句：自动资源管理（HttpClient和FileStream）
+/// - 异常处理：try-catch块
+/// - 字符串插值：$""语法
+/// - Unity生命周期方法：Start()、Update()
+/// - 输入系统：Input.GetKeyDown/Up检测按键
+/// - 文件I/O：Path.Combine、File.Delete
+/// - JSON序列化：JsonConvert处理JSON数据
+/// - 泛型：HttpClient<T>、Task<T>
+/// </remarks>
 public class STTController : MonoBehaviour
 {
     public TextMeshProUGUI transcriptText;
@@ -39,6 +56,9 @@ public class STTController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 开始录音
+    /// </summary>
     private void StartRecording()
     {
         if (!isRecording)
@@ -49,6 +69,9 @@ public class STTController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 停止录音并开始转录
+    /// </summary>
     private void StopRecordingAndTranscribe()
     {
         if (isRecording)
@@ -60,6 +83,9 @@ public class STTController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 转录音频为文本（异步方法）
+    /// </summary>
     private async Task TranscribeAudio()
     {
         try
@@ -84,6 +110,12 @@ public class STTController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 发送音频到Whisper API进行转录
+    /// </summary>
+    /// <param name="filePath">音频文件路径</param>
+    /// <param name="model">模型名称</param>
+    /// <returns>转录后的文本</returns>
     private async Task<string> SendToWhisperAPI(string filePath, string model)
     {
         using (HttpClient client = new HttpClient())
@@ -120,6 +152,9 @@ public class STTController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 转录响应数据类
+    /// </summary>
     private class TranscriptionResponse
     {
         public string text { get; set; }
