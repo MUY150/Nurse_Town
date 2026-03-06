@@ -1,131 +1,51 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
-using System.Text;
-using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Newtonsoft.Json;
-using System.Linq;
+using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using uLipSync;
 
-/// <summary>
-/// 坐姿病人语音控制器，负责处理坐姿病人的AI对话、情绪检测和评分系统
-/// </summary>
-/// <remarks>
-/// C#特性说明：
-/// - MonoBehaviour：Unity脚本基类
-/// - 单例模式（Singleton）：使用静态Instance字段确保全局唯一
-/// - Unity生命周期方法：Awake()、Start()
-/// - [SerializeField]特性：序列化字段，在Inspector中可编辑
-/// - 字符串插值：$""语法构建字符串
-/// - 泛型：List<T>、Dictionary<K,V>、GetComponent<T>()
-/// - 正则表达式（Regex）：提取情绪代码
-/// - UnityWebRequest：Unity的HTTP请求类
-/// - 协程（Coroutine）：使用IEnumerator和yield return实现异步网络请求
-/// - PlayerPrefs：Unity持久化存储
-/// - 异常处理：try-catch块
-/// - 字符串操作：Substring()、Trim()、Split()等
-/// - 匿名类型：创建临时对象
-/// - 空条件运算符：?. 避免空引用异常
-/// - LINQ查询：Where()、Select()等
-/// - System.Random：随机数生成
-/// - 字符串插值：string.Format()
-/// - JsonConvert：JSON序列化库
-/// - StringBuilder：高效字符串构建
-/// - [Serializable]特性：标记类可被序列化
-/// </remarks>
 public class sitPatientSpeech : MonoBehaviour
 {
-    // 单例模式：静态实例，确保全局唯一
-    public static sitPatientSpeech Instance; // Singleton instance
-
-    // 公共字段：API配置
-    public string apiUrl = "https://api.deepseek.com/v1/chat/completions";
-    public string apiKey;
-    
-    // 组件引用
+    public static sitPatientSpeech Instance;
+    private ILlmClient _llmClient;
     private CharacterAnimationController animationController;
     private BloodEffectController bloodEffectController;
-    private ScoringSystem scoringSystem = new ScoringSystem(); // For scoring system
-
-    // 聊天消息列表
-    private List<Dictionary<string, string>> chatMessages;
-
-    // Variables for multiple patients
+    private ScoringSystem scoringSystem = new ScoringSystem();
     private List<string> patientInstructionsList;
     private string patient1Instructions;
     private string patient2Instructions;
     private string patient3Instructions;
-
-    // solve 429 too many requests error
-    private bool isRequestInProgress = false;
-    private float requestCooldown = 1.0f;
-
     private string transcript = "";
 
-    /// <summary>
-    /// Unity生命周期方法：对象创建时调用
-    /// </summary>
     void Awake()
     {
-        // 单例模式：确保只有一个sitPatientSpeech实例
         if (Instance == null)
         {
             Instance = this;
-            // 如果需要对象在场景切换时保持存在，请取消注释以下行
-            // DontDestroyOnLoad(gameObject);
         }
         else
         {
-            // 如果已存在实例，销毁当前对象
             Destroy(gameObject);
         }
     }
 
-    /// <summary>
-    /// Unity生命周期方法：初始化时调用
-    /// </summary>
     void Start()
     {
-        // 如果Inspector没有配置apiKey，尝试从环境变量获取
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            // 从环境变量获取API密钥
-            apiKey = EnvironmentLoader.GetEnvVariable("DEEPSEEK_API_KEY")
-                     ?? EnvironmentLoader.GetEnvVariable("OPENAI_API_KEY"); // 兜底策略
-        }
-
-        // 验证API密钥
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            Debug.LogError("[sitPatientSpeech] API Key is missing! Please set it in the Inspector or provide a .env file with DEEPSEEK_API_KEY.");
-            enabled = false; // 禁用脚本防止继续执行
-            return;
-        }
-
-        // 显示API密钥前缀用于调试
-        Debug.Log($"Using API Key (first 8 chars): {apiKey.Substring(0, Mathf.Min(8, apiKey.Length))}...");
-
-        // 初始化病人指令和聊天系统
+        ApiConfig.Initialize();
         InitializePatientInstructions();
-        InitializeChat();
+        InitializeLLMClient();
 
-        // 获取组件引用
+        scoringSystem.Initialize(this);
+
         animationController = GetComponent<CharacterAnimationController>();
         bloodEffectController = GetComponent<BloodEffectController>();
     }
 
-    /// <summary>
-    /// 初始化病人指令，定义不同类型的病人角色
-    /// </summary>
     private void InitializePatientInstructions()
     {
-        // 基础指令：病人的医疗背景和症状
         string baseInstructions = @"
             You are strictly playing the role of Mrs. Johnson. 
             Background:
@@ -143,9 +63,7 @@ public class sitPatientSpeech : MonoBehaviour
             - Family History: Mentions mother and brother with high blood pressure; adds that mother had heart disease if prompted.
             ";
 
-        // 病人1：正常性格（原始版本）
         patient1Instructions = baseInstructions + @"
-
             Tone and Personality:
             - Polite and cooperative tone; generally compliant and concerned about her health.
             - Expresses mild anxiety about current symptoms; headaches and dizziness are more severe than usual.
@@ -160,9 +78,7 @@ public class sitPatientSpeech : MonoBehaviour
             Please keep responses concise.
             ";
 
-        // 病人2：很少说话，给出模糊描述
         patient2Instructions = baseInstructions + @"
-
             Tone and Personality:
             - Reserved and speaks very little.
             - Provides brief and sometimes vague answers, saying something like 'i don't remember.../i am not sure'
@@ -176,9 +92,7 @@ public class sitPatientSpeech : MonoBehaviour
             As Mrs. Johnson, please initiate the conversation by saying minimal words like 'hi nurse'.
             ";
 
-        // 病人3：情绪激动，使用"我觉得我要死了"等表达
         patient3Instructions = baseInstructions + @"
-
             Tone and Personality:
             - Highly emotional and anxious.
             - Responses are intense and be exaggerated.
@@ -192,7 +106,6 @@ public class sitPatientSpeech : MonoBehaviour
             As Mrs. Johnson, please initiate the conversation by expressing your extreme distress.
             ";
 
-        // 创建病人指令列表
         patientInstructionsList = new List<string>()
         {
             patient1Instructions,
@@ -201,12 +114,8 @@ public class sitPatientSpeech : MonoBehaviour
         };
     }
 
-    /// <summary>
-    /// 初始化聊天系统，随机选择病人类型并开始对话
-    /// </summary>
-    private void InitializeChat()
+    private void InitializeLLMClient()
     {
-        // 情绪指令：要求AI在每个回复后添加情绪代码
         string emotionInstructions = @"
             IMPORTANT: You must end EVERY response with one of these emotion codes:
             - Use [0] for neutral responses or statements (plays bend animation)
@@ -215,216 +124,78 @@ public class sitPatientSpeech : MonoBehaviour
             - Use [3] for positive responses or agreement, and appreciation (plays thumbs up animation)
             - Use [4] for blood pressureing, if the nurse asks to measure your blood pressure (plays arm raise animation)";
 
-        // 随机选择病人指令
         System.Random rand = new System.Random();
         int patientIndex = rand.Next(patientInstructionsList.Count);
         string selectedPatientInstructions = patientInstructionsList[patientIndex];
+        string systemPrompt = $"{selectedPatientInstructions}\n\n{emotionInstructions}";
 
-        // 初始化聊天消息列表
-        chatMessages = new List<Dictionary<string, string>>()
+        _llmClient = ClientFactory.CreateLLMClient(LLMProvider.DeepSeek, this, systemPrompt);
+        _llmClient.OnMessageReceived += OnLLMResponseReceived;
+
+        Debug.Log("[sitPatientSpeech] LLM Client initialized with DeepSeek");
+        _llmClient.SendChatMessage("Hello");
+
+        // 关联到聊天 UI
+        Debug.Log("[sitPatientSpeech] Looking for CurrentChatUI...");
+        var chatUI = FindObjectOfType<CurrentChatUI>();
+        if (chatUI != null)
         {
-            new Dictionary<string, string>()
-            {
-                { "role", "system" },
-                { "content", $"{selectedPatientInstructions}\n\n{emotionInstructions}" }
-            }
-        };
-
-        // 打印初始消息并开始对话
-        PrintChatMessage(chatMessages);
-        Debug.Log("Starting PostRequest");
-        StartCoroutine(PostRequest());
-        Debug.Log("Finished PostRequest");
+            Debug.Log("[sitPatientSpeech] Found CurrentChatUI, setting LLM client...");
+            chatUI.SetCurrentLlmClient(_llmClient);
+            Debug.Log("[sitPatientSpeech] LLM client linked to chat UI");
+        }
+        else
+        {
+            Debug.LogError("[sitPatientSpeech] CurrentChatUI NOT FOUND in scene!");
+        }
     }
 
-    /// <summary>
-    /// 接收护士的语音转文本结果并处理
-    /// </summary>
-    /// <param name="transcribedText">护士的语音转文本结果</param>
+    private void OnLLMResponseReceived(string message)
+    {
+        transcript += $"Patient:\n{message}\n\n";
+
+        if (sitTTSManager.Instance != null)
+        {
+            sitTTSManager.Instance.ConvertTextToSpeech(message);
+        }
+        else
+        {
+            Debug.LogWarning("sitTTSManager not found – skipping TTS.");
+        }
+    }
+
     public void ReceiveNurseTranscription(string transcribedText)
     {
+        if (string.IsNullOrWhiteSpace(transcribedText))
+        {
+            Debug.LogWarning("[sitPatientSpeech] Received empty transcription, skipping response.");
+            return;
+        }
         NurseResponds(transcribedText);
     }
 
-    /// <summary>
-    /// 处理护士的回复并生成病人响应
-    /// </summary>
-    /// <param name="nurseMessage">护士的文本消息</param>
     private void NurseResponds(string nurseMessage)
     {
-        Debug.Log("NurseResponds: Starting...");
-        
-        // 将护士消息添加到聊天历史
-        chatMessages.Add(new Dictionary<string, string>() { { "role", "user" }, { "content", nurseMessage } });
-        PrintChatMessage(chatMessages);
-
-        // 将用户输入追加到转录文本
+        Debug.Log("NurseResponds: " + nurseMessage);
         transcript += $"User:\n{nurseMessage}\n\n";
 
-        // 仅当没有正在进行的请求时才开始新请求
-        if (!isRequestInProgress)
+        if (_llmClient != null)
         {
-            StartCoroutine(PostRequest());
-        }
-        else
-        {
-            Debug.Log("Request in progress. Waiting for cooldown...");
+            _llmClient.SendChatMessage(nurseMessage);
         }
 
-        // 评估护士的回复
         scoringSystem.EvaluateNurseResponse(nurseMessage);
     }
 
-    /// <summary>
-    /// 向AI API发送请求的协程方法
-    /// </summary>
-    IEnumerator PostRequest()
-    {
-        isRequestInProgress = true;
-        Debug.Log("=== [DEBUG] Starting PostRequest ===");
-
-        // 1. 打印当前使用的URL和Key（遮盖后）
-        Debug.Log($"[DEBUG] Target API URL: {apiUrl}");
-        if (!string.IsNullOrEmpty(apiKey))
-        {
-            string maskedKey = apiKey.Length > 8
-                ? $"sk-...{apiKey.Substring(apiKey.Length - 4)}"
-                : "INVALID_KEY";
-            Debug.Log($"[DEBUG] Using API Key (masked): {maskedKey}");
-        }
-        else
-        {
-            Debug.LogError("[DEBUG] API Key is NULL or empty!");
-        }
-
-        // 2. 构建请求体并打印（只显示前200个字符用于刷新）
-        string requestBody = BuildRequestBody();
-        Debug.Log($"[DEBUG] Request Body (first 300 chars):\n{requestBody.Substring(0, Mathf.Min(300, requestBody.Length))}");
-
-        // 3. 创建请求并设置Header
-        var request = CreateRequest(requestBody);
-
-        // 4. 发送请求
-        yield return request.SendWebRequest();
-
-        // 5. 处理响应
-        if (request.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError($"[ERROR] WebRequest failed:");
-            Debug.LogError($"  - Result: {request.result}");
-            Debug.LogError($"  - Error Message: {request.error}");
-            Debug.LogError($"  - HTTP Status Code: {request.responseCode}");
-            Debug.LogError($"  - Response Body:\n{request.downloadHandler?.text ?? "(null)"}");
-
-            // 错误诊断：检查是否是URL错误或401/404
-            if (request.responseCode == 404)
-            {
-                Debug.LogError(">>> Likely cause: Missing '/v1/' in API URL!");
-            }
-            else if (request.responseCode == 401)
-            {
-                Debug.LogError(">>> Likely cause: Invalid API Key OR wrong service (e.g., using OpenAI key on DeepSeek)");
-            }
-        }
-        else
-        {
-            Debug.Log("[SUCCESS] Received response from server.");
-            var responseText = request.downloadHandler.text;
-            Debug.Log($"[RESPONSE] Full response:\n{responseText}");
-
-            try
-            {
-                // 解析JSON响应
-                var jsonResponse = JObject.Parse(responseText);
-                var messageContent = jsonResponse["choices"]?[0]?["message"]?["content"]?.ToString();
-
-                if (string.IsNullOrEmpty(messageContent))
-                {
-                    Debug.LogError("[ERROR] No 'content' found in AI response!");
-                    Debug.Log($"[DEBUG] Parsed JSON keys: {string.Join(", ", jsonResponse.Properties().Select(p => p.Name))}");
-                }
-                else
-                {
-                    // 将AI回复添加到聊天历史
-                    chatMessages.Add(new Dictionary<string, string>() { { "role", "assistant" }, { "content", messageContent } });
-                    PrintChatMessage(chatMessages);
-
-                    // 保存到转录文本
-                    transcript += $"Patient:\n{messageContent}\n\n";
-                    PlayerPrefs.SetString("interviewScripts", transcript);
-                    PlayerPrefs.Save();
-
-                    // 调用TTS生成语音
-                    if (sitTTSManager.Instance != null)
-                    {
-                        sitTTSManager.Instance.ConvertTextToSpeech(messageContent);
-                    }
-                    else
-                    {
-                        Debug.LogWarning("sitTTSManager not found – skipping TTS.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[JSON PARSE ERROR]: {ex.Message}\nResponse was:\n{responseText}");
-            }
-        }
-
-        // 等待冷却时间
-        yield return new WaitForSeconds(requestCooldown);
-        isRequestInProgress = false;
-        Debug.Log("=== [DEBUG] PostRequest finished ===");
-    }
-
-    /// <summary>
-    /// 构建请求体
-    /// </summary>
-    /// <returns>JSON格式的请求体字符串</returns>
-    private string BuildRequestBody()
-    {
-        // 匿名类型：创建请求对象
-        var requestObject = new
-        {
-            model = "deepseek-chat", // 模型名称
-            messages = chatMessages,
-            temperature = 0.7f,
-            max_tokens = 1500
-        };
-        return JsonConvert.SerializeObject(requestObject);
-    }
-
-    /// <summary>
-    /// 创建HTTP请求
-    /// </summary>
-    /// <param name="requestBody">请求体字符串</param>
-    /// <returns>UnityWebRequest对象</returns>
-    private UnityWebRequest CreateRequest(string requestBody)
-    {
-        var request = new UnityWebRequest(apiUrl, "POST");
-        byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBody);
-        request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-        request.downloadHandler = new DownloadHandlerBuffer();
-        request.SetRequestHeader("Content-Type", "application/json");
-        request.SetRequestHeader("Authorization", "Bearer " + apiKey);
-        return request;
-    }
-
-    /// <summary>
-    /// 打印聊天消息到调试控制台
-    /// </summary>
-    /// <param name="messages">聊天消息列表</param>
     public static void PrintChatMessage(List<Dictionary<string, string>> messages)
     {
         if (messages.Count == 0)
             return;
 
-        // 获取最新消息
         var latestMessage = messages[messages.Count - 1];
         string role = latestMessage["role"];
         string content = latestMessage["content"];
 
-        // 提取情绪代码（如果存在）
         string emotionCode = "";
         var match = Regex.Match(content, @"\[(\d+)\]$");
         if (match.Success)
@@ -432,7 +203,6 @@ public class sitPatientSpeech : MonoBehaviour
             emotionCode = $" (Emotion: {match.Groups[1].Value})";
         }
 
-        // 输出到控制台
         Debug.Log($"[{role.ToUpper()}]{emotionCode}\n{content}\n");
     }
 }

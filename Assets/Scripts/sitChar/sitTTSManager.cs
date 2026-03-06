@@ -52,7 +52,9 @@ public class sitTTSManager : MonoBehaviour
 
     // API端点和配置
     private const string TtsEndpoint = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-to-speech";
-    private const bool deleteCachedFile = true;
+
+    [Tooltip("是否在播放后删除缓存的音频文件")]
+    [SerializeField] private bool deleteCachedFile = true;
 
     // 动画控制器组件引用
     private sitCharacterAnimationController animationController;
@@ -225,6 +227,11 @@ public class sitTTSManager : MonoBehaviour
     /// <param name="messageContent">消息内容（用于情绪动画）</param>
     private void ProcessAudioBytes(byte[] audioData, string messageContent)
     {
+        if (this == null || gameObject == null)
+        {
+            Debug.LogWarning("[sitTTSManager] Object has been destroyed, skipping audio processing.");
+            return;
+        }
         string filePath = Path.Combine(Application.persistentDataPath, "tts_output.mp3");
         File.WriteAllBytes(filePath, audioData);
         StartCoroutine(LoadAndPlayAudio(filePath, messageContent));

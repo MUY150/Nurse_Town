@@ -62,7 +62,7 @@ public class InputManger : MonoBehaviour
     /// </summary>
     void FixedUpdate()
     {
-        // 告诉玩家移动控制器使用移动动作的值进行移动
+        if (motor == null) return;
         motor.ProcessMove(onFoot.Movement.ReadValue<Vector2>());
     }
 
@@ -71,7 +71,7 @@ public class InputManger : MonoBehaviour
     /// </summary>
     private void LateUpdate()
     {
-        // 处理视角旋转
+        if (look == null) return;
         look.ProcessLook(onFoot.Look.ReadValue<Vector2>());
     }
 

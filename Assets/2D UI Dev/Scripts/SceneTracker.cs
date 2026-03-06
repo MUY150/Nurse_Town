@@ -11,6 +11,12 @@ public class SceneTracker : MonoBehaviour
 
     private void Start()
     {
+        if (finishButton == null)
+        {
+            Debug.LogWarning("[SceneTracker] finishButton is not assigned in Inspector");
+            return;
+        }
+        
         finishButton.interactable = false; // Disable Finish at start
         
         // Load previously visited scenes from PlayerPrefs
@@ -48,6 +54,8 @@ public class SceneTracker : MonoBehaviour
 
     public void CheckCompletion()
     {
+        if (finishButton == null) return;
+        
         if (visitedScenes.Count >= totalScenes)
         {
             finishButton.interactable = true; // Enable Finish button
