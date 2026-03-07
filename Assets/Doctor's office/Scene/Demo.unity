@@ -2983,6 +2983,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   audioSource: {fileID: 1391037499}
   qwenApiKey: sk-107e9dfe818e48f4a37476e375ad21a6
+  deleteCachedFile: 0
 --- !u!114 &873283138
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3021,6 +3022,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   transcriptText: {fileID: 0}
+  sttProvider: 2
 --- !u!1 &897696203
 GameObject:
   m_ObjectHideFlags: 0
@@ -3505,6 +3507,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   transcriptText: {fileID: 192203176}
+  sttProvider: 2
 --- !u!4 &1060319836
 Transform:
   m_ObjectHideFlags: 0

@@ -70,11 +70,14 @@ public class WhisperSTTClient : MonoBehaviour, ISTTClient
             yield break;
         }
 
-        string filePath = Path.Combine(Application.persistentDataPath, "whisper_audio.wav");
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string fileName = $"whisper_audio_{timestamp}.wav";
+        string filePath = Path.Combine(Application.persistentDataPath, fileName);
         
         try
         {
-            SavWav.Save("whisper_audio.wav", _recordedClip);
+            SavWav.Save(fileName, _recordedClip);
+            Debug.Log($"[WhisperSTTClient] Audio saved to: {filePath}");
         }
         catch (Exception ex)
         {

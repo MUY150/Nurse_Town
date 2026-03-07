@@ -54,10 +54,10 @@ Role instructions:
 - Reflect defensiveness, agreement, or confusion naturally in follow-up responses.
 ";
 
-        _llmClient = ClientFactory.CreateLLMClient(LLMProvider.OpenAI, this, systemPrompt.Trim());
+        _llmClient = new LlmClient(LlmScene.Nurse, systemPrompt.Trim());
         _llmClient.OnMessageReceived += OnLLMResponseReceived;
 
-        Debug.Log("[ICUPrimaryNurseInterview] LLM Client initialized");
+        Debug.Log("[ICUPrimaryNurseInterview] LLM Client initialized for Nurse scene");
         _llmClient.SendChatMessage("Hello");
     }
 

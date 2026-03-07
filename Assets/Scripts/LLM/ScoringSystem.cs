@@ -27,7 +27,7 @@ public class ScoringSystem
     public void Initialize(MonoBehaviour owner)
     {
         _owner = owner;
-        _llmClient = ClientFactory.CreateEvaluationClient(owner);
+        _llmClient = new LlmClient(LlmScene.Evaluation, "You are an expert nursing instructor. Evaluate nurse responses based on the provided criteria.", enableLogging: false);
     }
 
     public void EvaluateNurseResponse(string nurseResponse)
@@ -67,7 +67,7 @@ public class ScoringSystem
         if (_llmClient == null)
         {
             Debug.LogError("[ScoringSystem] LLM Client is null. Creating a new one...");
-            _llmClient = ClientFactory.CreateEvaluationClient(_owner);
+            _llmClient = new LlmClient(LlmScene.Evaluation, "You are an expert nursing instructor. Evaluate nurse responses based on the provided criteria.", enableLogging: false);
         }
 
         Action<string> onResponse = null;

@@ -8,6 +8,7 @@ using System.Linq;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 
+[Obsolete("Use LlmClient with DeepSeekAdapter instead. This class will be removed in a future version.")]
 public class DeepSeekLLMClient : MonoBehaviour, ILlmClient
 {
     private string _apiUrl;
@@ -19,6 +20,7 @@ public class DeepSeekLLMClient : MonoBehaviour, ILlmClient
     private bool _isRequestInProgress = false;
     private float _requestCooldown = 1.0f;
     private MonoBehaviour _owner;
+    private bool _enableLogging = true;
 
     public string SessionId => _sessionId;
     public string ProviderName => "DeepSeek";
@@ -32,8 +34,10 @@ public class DeepSeekLLMClient : MonoBehaviour, ILlmClient
         _owner = owner;
     }
 
-    public void Initialize(string systemPrompt, string model = null)
+    public void Initialize(string systemPrompt, string model = null, bool enableLogging = true)
     {
+        _enableLogging = enableLogging;
+        
         var config = ApiConfig.Instance;
         _apiUrl = config.DeepSeekChatUrl;
         _apiKey = config.DeepSeekApiKey;
@@ -50,10 +54,21 @@ public class DeepSeekLLMClient : MonoBehaviour, ILlmClient
                 { "role", "system" },
                 { "content", systemPrompt }
             });
-            TriggerSessionStart(systemPrompt);
+            if (_enableLogging)
+            {
+                TriggerSessionStart(systemPrompt);
+            }
         }
 
-        Debug.Log($"[DeepSeekLLMClient] Initialized with model: {_model}, sessionId: {_sessionId}");
+        if (_enableLogging)
+        {
+            Debug.Log($"[DeepSeekLLMClient] Initialized with model: {_model}, sessionId: {_sessionId}");
+        }
+    }
+
+    public void Initialize(LlmScene scene, string systemPrompt, bool enableLogging = true)
+    {
+        Initialize(systemPrompt, null, enableLogging);
     }
 
     public void SendChatMessage(string userMessage)

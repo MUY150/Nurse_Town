@@ -72,11 +72,14 @@ public class SenseVoiceSTTClient : MonoBehaviour, ISTTClient
             return;
         }
 
-        string filePath = Path.Combine(Application.persistentDataPath, "sensevoice_audio.wav");
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string fileName = $"sensevoice_audio_{timestamp}.wav";
+        string filePath = Path.Combine(Application.persistentDataPath, fileName);
         
         try
         {
-            SavWav.Save("sensevoice_audio.wav", _recordedClip);
+            SavWav.Save(fileName, _recordedClip);
+            Debug.Log($"[SenseVoiceSTTClient] Audio saved to: {filePath}");
         }
         catch (Exception ex)
         {

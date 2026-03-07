@@ -108,10 +108,10 @@ public class OpenAIRequest : MonoBehaviour
         string selectedPatientInstructions = patientInstructionsList[patientIndex];
         string systemPrompt = $"{selectedPatientInstructions}\n\n{emotionInstructions}";
 
-        _llmClient = ClientFactory.CreateLLMClient(LLMProvider.DeepSeek, this, systemPrompt);
+        _llmClient = new LlmClient(LlmScene.Patient, systemPrompt);
         _llmClient.OnMessageReceived += OnLLMResponseReceived;
 
-        Debug.Log("[OpenAIRequest] LLM Client initialized with DeepSeek");
+        Debug.Log("[OpenAIRequest] LLM Client initialized for Patient scene");
         _llmClient.SendChatMessage("Hello");
     }
 

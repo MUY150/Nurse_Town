@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 
+[Obsolete("Use LlmScene enum with LlmClient instead")]
 public enum LLMProvider
 {
     OpenAI,
@@ -21,29 +22,13 @@ public enum STTProvider
 
 public static class ClientFactory
 {
+    [Obsolete("Use new LlmClient(LlmScene scene, string systemPrompt) instead. This method will be removed in a future version.")]
     public static ILlmClient CreateLLMClient(LLMProvider provider, MonoBehaviour owner, string systemPrompt)
     {
-        GameObject clientObject = new GameObject($"{provider}LLMClient");
-        ILlmClient client = null;
-
-        switch (provider)
-        {
-            case LLMProvider.OpenAI:
-                var openaiClient = clientObject.AddComponent<OpenAILLMClient>();
-                ((OpenAILLMClient)openaiClient).SetOwner(owner);
-                openaiClient.Initialize(systemPrompt);
-                client = openaiClient;
-                break;
-
-            case LLMProvider.DeepSeek:
-                var deepseekClient = clientObject.AddComponent<DeepSeekLLMClient>();
-                ((DeepSeekLLMClient)deepseekClient).SetOwner(owner);
-                deepseekClient.Initialize(systemPrompt);
-                client = deepseekClient;
-                break;
-        }
-
-        return client;
+        Debug.LogWarning("[ClientFactory] CreateLLMClient is deprecated. Use new LlmClient(LlmScene, systemPrompt) instead.");
+        
+        LlmScene scene = LlmScene.Custom;
+        return new LlmClient(scene, systemPrompt);
     }
 
     public static ISTTClient CreateSTTClient(STTProvider provider = STTProvider.SenseVoice, MonoBehaviour owner = null)
@@ -92,34 +77,11 @@ public static class ClientFactory
         return client;
     }
 
+    [Obsolete("Use new LlmClient(LlmScene.Evaluation, systemPrompt, enableLogging: false) instead. This method will be removed in a future version.")]
     public static ILlmClient CreateEvaluationClient(MonoBehaviour owner)
     {
-        var config = ApiConfig.Instance;
-        string provider = config.EvaluationProvider?.ToLower() ?? "deepseek";
-        string model = config.EvaluationModel;
-
-        GameObject clientObject = new GameObject($"Evaluation{provider.ToUpper()}Client");
-        ILlmClient client = null;
-
-        switch (provider)
-        {
-            case "deepseek":
-                var deepseekClient = clientObject.AddComponent<DeepSeekLLMClient>();
-                ((DeepSeekLLMClient)deepseekClient).SetOwner(owner);
-                deepseekClient.Initialize(null, model);
-                client = deepseekClient;
-                break;
-
-            case "openai":
-            default:
-                var openaiClient = clientObject.AddComponent<OpenAILLMClient>();
-                ((OpenAILLMClient)openaiClient).SetOwner(owner);
-                openaiClient.Initialize(null, model);
-                client = openaiClient;
-                break;
-        }
-
-        Debug.Log($"[ClientFactory] Created evaluation client: provider={provider}, model={model}");
-        return client;
+        Debug.LogWarning("[ClientFactory] CreateEvaluationClient is deprecated. Use new LlmClient(LlmScene.Evaluation, systemPrompt, false) instead.");
+        
+        return new LlmClient(LlmScene.Evaluation, "You are an expert evaluator.", enableLogging: false);
     }
 }

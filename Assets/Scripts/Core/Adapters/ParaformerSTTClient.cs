@@ -88,11 +88,13 @@ public class ParaformerSTTClient : MonoBehaviour, ISTTClient
 
         Debug.Log($"[ParaformerSTTClient] Audio recorded - samples: {_recordedClip.samples}, channels: {_recordedClip.channels}, frequency: {_recordedClip.frequency}");
 
-        string filePath = Path.Combine(Application.persistentDataPath, "paraformer_audio.wav");
+        string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        string fileName = $"paraformer_audio_{timestamp}.wav";
+        string filePath = Path.Combine(Application.persistentDataPath, fileName);
 
         try
         {
-            SavWav.Save("paraformer_audio.wav", _recordedClip);
+            SavWav.Save(fileName, _recordedClip);
             Debug.Log($"[ParaformerSTTClient] Audio saved to: {filePath}");
         }
         catch (Exception ex)

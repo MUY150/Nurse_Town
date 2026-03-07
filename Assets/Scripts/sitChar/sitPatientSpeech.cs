@@ -122,21 +122,20 @@ public class sitPatientSpeech : MonoBehaviour
             - Use [1] for responses showing physical discomfort (plays rub arm animation)
             - Use [2] for sad or negative emotional responses (plays sad animation)
             - Use [3] for positive responses or agreement, and appreciation (plays thumbs up animation)
-            - Use [4] for blood pressureing, if the nurse asks to measure your blood pressure (plays arm raise animation)";
+            - Use [4] for blood pressureing, if the nurse asks to measure your blood pressure (plays arm raise animation)
+            ";
 
         System.Random rand = new System.Random();
         int patientIndex = rand.Next(patientInstructionsList.Count);
         string selectedPatientInstructions = patientInstructionsList[patientIndex];
         string systemPrompt = $"{selectedPatientInstructions}\n\n{emotionInstructions}";
 
-        _llmClient = ClientFactory.CreateLLMClient(LLMProvider.DeepSeek, this, systemPrompt);
+        _llmClient = new LlmClient(LlmScene.Patient, systemPrompt);
         _llmClient.OnMessageReceived += OnLLMResponseReceived;
 
-        Debug.Log("[sitPatientSpeech] LLM Client initialized with DeepSeek");
+        Debug.Log("[sitPatientSpeech] LLM Client initialized for Patient scene");
         _llmClient.SendChatMessage("Hello");
 
-        // 关联到聊天 UI
-        Debug.Log("[sitPatientSpeech] Looking for CurrentChatUI...");
         var chatUI = FindObjectOfType<CurrentChatUI>();
         if (chatUI != null)
         {

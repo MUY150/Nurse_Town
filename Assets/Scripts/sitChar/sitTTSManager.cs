@@ -232,8 +232,9 @@ public class sitTTSManager : MonoBehaviour
             Debug.LogWarning("[sitTTSManager] Object has been destroyed, skipping audio processing.");
             return;
         }
-        string filePath = Path.Combine(Application.persistentDataPath, "tts_output.mp3");
+        string filePath = Path.Combine(Application.persistentDataPath, $"tts_output_{Guid.NewGuid()}.mp3");
         File.WriteAllBytes(filePath, audioData);
+        Debug.Log($"[sitTTSManager] Audio saved to: {filePath}");
         StartCoroutine(LoadAndPlayAudio(filePath, messageContent));
     }
 

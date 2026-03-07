@@ -97,14 +97,13 @@ You will be the Self-Reflective and Honest Witness. The Self-Reflective and Hone
         string selectedPatientInstructions = patientInstructionsList[patientIndex];
         string systemPrompt = $"{selectedPatientInstructions}\n\n{emotionInstructions}";
 
-        _llmClient = ClientFactory.CreateLLMClient(LLMProvider.OpenAI, this, systemPrompt);
+        _llmClient = new LlmClient(LlmScene.Nurse, systemPrompt);
         
         _llmClient.OnMessageReceived += OnLLMResponseReceived;
 
-        Debug.Log("[PrimaryNurse] LLM Client initialized");
+        Debug.Log("[PrimaryNurse] LLM Client initialized for Nurse scene");
         _llmClient.SendChatMessage("Hello");
         
-        // 关联到聊天 UI
         var chatUI = FindObjectOfType<CurrentChatUI>();
         if (chatUI != null)
         {
