@@ -4,10 +4,13 @@ using TMPro;
 using System.Linq;
 using UnityEngine.UI;
 
+/// <summary>
+/// 聊天UI显示控制器 - 只负责UI显示，不处理输入逻辑
+/// 输入逻辑已移至 ChatInputController
+/// </summary>
 public class CurrentChatUI : MonoBehaviour
 {
     [Header("配置")]
-    public KeyCode toggleKey = KeyCode.Return;
     public Color userColor = new Color(0.2f, 0.5f, 1f);
     public Color assistantColor = new Color(0.3f, 0.8f, 0.3f);
     public Color systemColor = new Color(0.7f, 0.7f, 0.7f);
@@ -22,10 +25,6 @@ public class CurrentChatUI : MonoBehaviour
     public GameObject messageItemPrefab;
     public ScrollRect scrollRect;
 
-    [Header("输入框")]
-    public TMP_InputField inputField;
-    public GameObject inputFieldContainer;
-
     private ILlmClient _currentLlmClient;
     private List<GameObject> _messageItems = new List<GameObject>();
 
@@ -37,68 +36,9 @@ public class CurrentChatUI : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        if (inputField == null)
-        {
-            var container = transform.Find("InputFieldContainer");
-            if (container != null)
-            {
-                inputFieldContainer = container.gameObject;
-                inputField = container.GetComponentInChildren<TMP_InputField>();
-                if (inputField != null)
-                {
-                    inputField.onSubmit.AddListener(OnInputSubmit);
-                    Debug.Log("[CurrentChatUI] InputField found and bound successfully");
-                }
-                else
-                {
-                    Debug.LogWarning("[CurrentChatUI] TMP_InputField not found in InputFieldContainer");
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[CurrentChatUI] InputFieldContainer not found");
-            }
-        }
-    }
-
-    private void OnInputSubmit(string text)
-    {
-        OnSendButtonClicked();
-    }
-
-    private void Update()
-    {
-        // Enter 键：打开面板（如果关闭）或发送消息（如果打开且输入框有内容）
-        if (Input.GetKeyDown(KeyCode.Return))
-        {
-            if (panel != null && panel.activeSelf)
-            {
-                // 面板已打开，尝试发送消息
-                if (inputField != null && !string.IsNullOrWhiteSpace(inputField.text))
-                {
-                    OnSendButtonClicked();
-                }
-                // 如果输入框为空，不执行任何操作（保持面板打开）
-            }
-            else
-            {
-                // 面板关闭，打开面板
-                ShowPanel();
-            }
-        }
-        
-        // Esc 键：关闭面板
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            if (panel != null && panel.activeSelf)
-            {
-                HidePanel();
-            }
-        }
-    }
-
+    /// <summary>
+    /// 设置当前LLM客户端
+    /// </summary>
     public void SetCurrentLlmClient(ILlmClient client)
     {
         Debug.Log($"[CurrentChatUI] SetCurrentLlmClient called with client: {client?.GetType().Name ?? "null"}");
@@ -118,24 +58,47 @@ public class CurrentChatUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 切换面板显示状态
+    /// 注意：输入处理已移至 ChatInputController
+    /// </summary>
     public void TogglePanel()
     {
         if (panel == null) return;
         
-        panel.SetActive(!panel.activeSelf);
-        
         if (panel.activeSelf)
-        {
-            RefreshChat();
-            ScrollToBottom();
-            SetGamePaused(true);
-        }
+            HidePanel();
         else
-        {
-            SetGamePaused(false);
-        }
+            ShowPanel();
     }
 
+    /// <summary>
+    /// 显示聊天面板
+    /// </summary>
+    public void ShowPanel()
+    {
+        if (panel == null) return;
+        
+        panel.SetActive(true);
+        RefreshChat();
+        ScrollToBottom();
+        SetGamePaused(true);
+    }
+
+    /// <summary>
+    /// 隐藏聊天面板
+    /// </summary>
+    public void HidePanel()
+    {
+        if (panel == null) return;
+        
+        panel.SetActive(false);
+        SetGamePaused(false);
+    }
+
+    /// <summary>
+    /// 设置游戏暂停状态（只影响视角控制）
+    /// </summary>
     private void SetGamePaused(bool paused)
     {
         if (paused)
@@ -154,6 +117,9 @@ public class CurrentChatUI : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 禁用/启用玩家视角控制
+    /// </summary>
     private void DisablePlayerLook(bool disable)
     {
         // 查找玩家对象上的 InputManger 组件并禁用/启用
@@ -174,30 +140,9 @@ public class CurrentChatUI : MonoBehaviour
         }
     }
 
-    public void ShowPanel()
-    {
-        if (panel != null && !panel.activeSelf)
-        {
-            panel.SetActive(true);
-            RefreshChat();
-            ScrollToBottom();
-            SetGamePaused(true);
-            if (inputField != null)
-            {
-                inputField.ActivateInputField();
-            }
-        }
-    }
-
-    public void HidePanel()
-    {
-        if (panel != null && panel.activeSelf)
-        {
-            panel.SetActive(false);
-            SetGamePaused(false);
-        }
-    }
-
+    /// <summary>
+    /// 刷新聊天显示
+    /// </summary>
     public void RefreshChat()
     {
         Debug.Log($"[CurrentChatUI] RefreshChat called. Client: {_currentLlmClient?.GetType().Name ?? "null"}, Panel active: {panel?.activeSelf}");
@@ -247,6 +192,22 @@ public class CurrentChatUI : MonoBehaviour
         else
         {
             ScrollToBottom();
+        }
+    }
+
+    /// <summary>
+    /// 发送用户消息（由 ChatInputController 调用）
+    /// </summary>
+    public void SendUserMessage(string message)
+    {
+        Debug.Log($"[CurrentChatUI] SendUserMessage: {message}");
+        if (sitPatientSpeech.Instance != null)
+        {
+            sitPatientSpeech.Instance.ReceiveNurseTranscription(message);
+        }
+        else
+        {
+            Debug.LogWarning("[CurrentChatUI] sitPatientSpeech.Instance is null, cannot send message");
         }
     }
 
@@ -352,32 +313,6 @@ public class CurrentChatUI : MonoBehaviour
         if (_currentLlmClient != null)
         {
             _currentLlmClient.OnConversationUpdated -= RefreshChat;
-        }
-    }
-
-    public void OnSendButtonClicked()
-    {
-        if (inputField == null) return;
-        
-        string text = inputField.text.Trim();
-        if (!string.IsNullOrEmpty(text))
-        {
-            SendUserMessage(text);
-            inputField.text = "";
-            inputField.ActivateInputField();
-        }
-    }
-
-    private void SendUserMessage(string message)
-    {
-        Debug.Log($"[CurrentChatUI] SendUserMessage: {message}");
-        if (sitPatientSpeech.Instance != null)
-        {
-            sitPatientSpeech.Instance.ReceiveNurseTranscription(message);
-        }
-        else
-        {
-            Debug.LogWarning("[CurrentChatUI] sitPatientSpeech.Instance is null, cannot send message");
         }
     }
 }

@@ -388,7 +388,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e20fac76de31d0b41b1f3dfaeed49ae1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  toggleKey: 13
   userColor: {r: 0.2, g: 0.5, b: 1, a: 1}
   assistantColor: {r: 0.3, g: 0.8, b: 0.3, a: 1}
   systemColor: {r: 0.7, g: 0.7, b: 0.7, a: 1}
@@ -400,8 +399,6 @@ MonoBehaviour:
   messageContainer: {fileID: 609770435}
   messageItemPrefab: {fileID: 198972821}
   scrollRect: {fileID: 321692030}
-  inputField: {fileID: 0}
-  inputFieldContainer: {fileID: 0}
 --- !u!114 &133723870
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3038,8 +3035,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88090d567ebb547fb96a126739dd232d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  transcriptText: {fileID: 0}
-  sttProvider: 2
 --- !u!1 &897696203
 GameObject:
   m_ObjectHideFlags: 0
@@ -3523,8 +3518,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88090d567ebb547fb96a126739dd232d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  transcriptText: {fileID: 192203176}
-  sttProvider: 2
 --- !u!4 &1060319836
 Transform:
   m_ObjectHideFlags: 0
@@ -5706,6 +5699,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3160919205043937522, guid: 1da1abc1e9d90644bb2b4cce91dd58f2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2064243555}
+    - targetCorrespondingSourceObject: {fileID: 3160919205043937522, guid: 1da1abc1e9d90644bb2b4cce91dd58f2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2064243564}
   m_SourcePrefab: {fileID: 100100000, guid: 1da1abc1e9d90644bb2b4cce91dd58f2, type: 3}
 --- !u!1 &1964582324
 GameObject:
@@ -5897,6 +5893,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e55baea2e5dd18048bb9ea9cf76e3e90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  chineseFont: {fileID: 0}
 --- !u!1 &2034381743
 GameObject:
   m_ObjectHideFlags: 0
@@ -6159,6 +6156,21 @@ MonoBehaviour:
   cam: {fileID: 840923454}
   xSensitivity: 30
   ySensitivity: 30
+--- !u!114 &2064243564
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2064243554}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a5a76a97c2444b429396b3ca76aae95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sttProvider: 2
+  maxRecordingDuration: 30
+  minRecordingDuration: 0.5
 --- !u!1 &2075222951
 GameObject:
   m_ObjectHideFlags: 0
