@@ -18,6 +18,9 @@ public class LlmService : Singleton<LlmService>
     {
         base.Awake();
         RegisterDefaultAdapters();
+        
+        var loggerInstance = ConversationLogger.Instance;
+        Debug.Log($"[LlmService] ConversationLogger initialized: {loggerInstance != null}");
     }
     
     private void RegisterDefaultAdapters()

@@ -7,7 +7,7 @@ using UnityEngine.UI;
 public class CurrentChatUI : MonoBehaviour
 {
     [Header("配置")]
-    public KeyCode toggleKey = KeyCode.F1;
+    public KeyCode toggleKey = KeyCode.Return;
     public Color userColor = new Color(0.2f, 0.5f, 1f);
     public Color assistantColor = new Color(0.3f, 0.8f, 0.3f);
     public Color systemColor = new Color(0.7f, 0.7f, 0.7f);
@@ -22,6 +22,10 @@ public class CurrentChatUI : MonoBehaviour
     public GameObject messageItemPrefab;
     public ScrollRect scrollRect;
 
+    [Header("输入框")]
+    public TMP_InputField inputField;
+    public GameObject inputFieldContainer;
+
     private ILlmClient _currentLlmClient;
     private List<GameObject> _messageItems = new List<GameObject>();
 
@@ -33,11 +37,65 @@ public class CurrentChatUI : MonoBehaviour
         }
     }
 
+    private void Start()
+    {
+        if (inputField == null)
+        {
+            var container = transform.Find("InputFieldContainer");
+            if (container != null)
+            {
+                inputFieldContainer = container.gameObject;
+                inputField = container.GetComponentInChildren<TMP_InputField>();
+                if (inputField != null)
+                {
+                    inputField.onSubmit.AddListener(OnInputSubmit);
+                    Debug.Log("[CurrentChatUI] InputField found and bound successfully");
+                }
+                else
+                {
+                    Debug.LogWarning("[CurrentChatUI] TMP_InputField not found in InputFieldContainer");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[CurrentChatUI] InputFieldContainer not found");
+            }
+        }
+    }
+
+    private void OnInputSubmit(string text)
+    {
+        OnSendButtonClicked();
+    }
+
     private void Update()
     {
-        if (Input.GetKeyDown(toggleKey))
+        // Enter 键：打开面板（如果关闭）或发送消息（如果打开且输入框有内容）
+        if (Input.GetKeyDown(KeyCode.Return))
         {
-            TogglePanel();
+            if (panel != null && panel.activeSelf)
+            {
+                // 面板已打开，尝试发送消息
+                if (inputField != null && !string.IsNullOrWhiteSpace(inputField.text))
+                {
+                    OnSendButtonClicked();
+                }
+                // 如果输入框为空，不执行任何操作（保持面板打开）
+            }
+            else
+            {
+                // 面板关闭，打开面板
+                ShowPanel();
+            }
+        }
+        
+        // Esc 键：关闭面板
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            if (panel != null && panel.activeSelf)
+            {
+                HidePanel();
+            }
         }
     }
 
@@ -124,6 +182,10 @@ public class CurrentChatUI : MonoBehaviour
             RefreshChat();
             ScrollToBottom();
             SetGamePaused(true);
+            if (inputField != null)
+            {
+                inputField.ActivateInputField();
+            }
         }
     }
 
@@ -290,6 +352,32 @@ public class CurrentChatUI : MonoBehaviour
         if (_currentLlmClient != null)
         {
             _currentLlmClient.OnConversationUpdated -= RefreshChat;
+        }
+    }
+
+    public void OnSendButtonClicked()
+    {
+        if (inputField == null) return;
+        
+        string text = inputField.text.Trim();
+        if (!string.IsNullOrEmpty(text))
+        {
+            SendUserMessage(text);
+            inputField.text = "";
+            inputField.ActivateInputField();
+        }
+    }
+
+    private void SendUserMessage(string message)
+    {
+        Debug.Log($"[CurrentChatUI] SendUserMessage: {message}");
+        if (sitPatientSpeech.Instance != null)
+        {
+            sitPatientSpeech.Instance.ReceiveNurseTranscription(message);
+        }
+        else
+        {
+            Debug.LogWarning("[CurrentChatUI] sitPatientSpeech.Instance is null, cannot send message");
         }
     }
 }
