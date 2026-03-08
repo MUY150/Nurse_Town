@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 public class JsonExporter : IConversationExporter
@@ -18,21 +20,14 @@ public class JsonExporter : IConversationExporter
 
         try
         {
-            var jsonData = new Dictionary<string, object>
+            if (!string.IsNullOrEmpty(snapshot.RawRequestJson))
             {
-                { "sessionId", snapshot.SessionId },
-                { "timestamp", snapshot.Timestamp.ToString("o") },
-                { "provider", snapshot.Provider },
-                { "model", snapshot.Model },
-                { "systemPrompt", snapshot.SystemPrompt },
-                { "eventType", snapshot.EventType.ToString() },
-                { "messages", ConvertMessages(snapshot.Messages) },
-                { "metadata", snapshot.Metadata ?? new Dictionary<string, object>() },
-                { "statistics", CalculateStatistics(snapshot.Messages, snapshot.SystemPrompt) }
-            };
-
-            string json = Newtonsoft.Json.JsonConvert.SerializeObject(jsonData, Newtonsoft.Json.Formatting.Indented);
-            File.WriteAllText(filePath, json, Encoding.UTF8);
+                ExportWithRawRequest(filePath, snapshot);
+            }
+            else
+            {
+                ExportFallback(filePath, snapshot);
+            }
 
             Debug.Log($"[JsonExporter] Exported to: {filePath}");
         }
@@ -40,6 +35,60 @@ public class JsonExporter : IConversationExporter
         {
             Debug.LogError($"[JsonExporter] Export failed: {ex.Message}");
         }
+    }
+
+    private void ExportWithRawRequest(string filePath, ConversationSnapshot snapshot)
+    {
+        var wrapper = new Dictionary<string, object>
+        {
+            { "sessionId", snapshot.SessionId },
+            { "timestamp", snapshot.Timestamp.ToString("o") },
+            { "provider", snapshot.Provider },
+            { "model", snapshot.Model },
+            { "eventType", snapshot.EventType.ToString() },
+            { "request", JObject.Parse(snapshot.RawRequestJson) }
+        };
+
+        if (snapshot.Messages != null && snapshot.Messages.Count > 0)
+        {
+            var lastMsg = snapshot.Messages.Last();
+            if (lastMsg.Role?.ToLower() == "assistant")
+            {
+                wrapper["response"] = new Dictionary<string, object>
+                {
+                    { "content", lastMsg.Content },
+                    { "usage", new Dictionary<string, int>
+                        {
+                            { "totalTokens", snapshot.Statistics?.TotalTokens ?? 0 },
+                            { "promptTokens", snapshot.Statistics?.PromptTokens ?? 0 },
+                            { "completionTokens", snapshot.Statistics?.CompletionTokens ?? 0 }
+                        }
+                    }
+                };
+            }
+        }
+
+        string json = Newtonsoft.Json.JsonConvert.SerializeObject(wrapper, Newtonsoft.Json.Formatting.Indented);
+        File.WriteAllText(filePath, json, Encoding.UTF8);
+    }
+
+    private void ExportFallback(string filePath, ConversationSnapshot snapshot)
+    {
+        var jsonData = new Dictionary<string, object>
+        {
+            { "sessionId", snapshot.SessionId },
+            { "timestamp", snapshot.Timestamp.ToString("o") },
+            { "provider", snapshot.Provider },
+            { "model", snapshot.Model },
+            { "systemPrompt", snapshot.SystemPrompt },
+            { "eventType", snapshot.EventType.ToString() },
+            { "messages", ConvertMessages(snapshot.Messages) },
+            { "metadata", snapshot.Metadata ?? new Dictionary<string, object>() },
+            { "statistics", CalculateStatistics(snapshot.Messages, snapshot.SystemPrompt) }
+        };
+
+        string json = Newtonsoft.Json.JsonConvert.SerializeObject(jsonData, Newtonsoft.Json.Formatting.Indented);
+        File.WriteAllText(filePath, json, Encoding.UTF8);
     }
 
     private List<Dictionary<string, object>> ConvertMessages(List<MessageSnapshot> messages)

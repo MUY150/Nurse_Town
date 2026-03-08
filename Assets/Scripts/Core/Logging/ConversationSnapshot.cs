@@ -13,6 +13,7 @@ public class ConversationSnapshot
     public DateTime Timestamp { get; set; }
     public ConversationEventType EventType { get; set; }
     public ConversationStatistics Statistics { get; set; }
+    public string RawRequestJson { get; set; }
 
     public ConversationSnapshot()
     {

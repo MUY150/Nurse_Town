@@ -167,6 +167,13 @@ public class LlmService : Singleton<LlmService>
             yield break;
         }
         
+        string requestBody = adapter.BuildRequestBody(
+            request.Messages, 
+            request.Model, 
+            config.temperature, 
+            config.maxTokens
+        );
+        
         var requestEvent = new LlmRequestEvent
         {
             SessionId = request.SessionId,
@@ -174,16 +181,10 @@ public class LlmService : Singleton<LlmService>
             Provider = request.Provider,
             Model = request.Model,
             Messages = new List<LlmMessage>(request.Messages),
-            Scene = request.Scene
+            Scene = request.Scene,
+            RawRequestBody = requestBody
         };
         LlmEventBus.Publish(requestEvent);
-        
-        string requestBody = adapter.BuildRequestBody(
-            request.Messages, 
-            request.Model, 
-            config.temperature, 
-            config.maxTokens
-        );
         
         string url = adapter.GetApiUrl();
         var headers = adapter.GetHeaders(apiKey);

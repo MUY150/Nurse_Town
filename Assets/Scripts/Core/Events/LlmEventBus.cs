@@ -15,6 +15,7 @@ public class LlmRequestEvent : ILlmEvent
     public string Model { get; set; }
     public List<LlmMessage> Messages { get; set; }
     public LlmScene Scene { get; set; }
+    public string RawRequestBody { get; set; }
 }
 
 public class LlmResponseEvent : ILlmEvent

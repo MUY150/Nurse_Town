@@ -12,8 +12,9 @@ public class CurrentChatUI : MonoBehaviour
     public Color assistantColor = new Color(0.3f, 0.8f, 0.3f);
     public Color systemColor = new Color(0.7f, 0.7f, 0.7f);
     public bool showSystemMessages = false;
-    public bool showLatestFirst = true;
+    public bool showLatestFirst = false;
     public int maxMessagesDisplayed = 100;
+    public bool useChineseRoleNames = true;
 
     [Header("引用")]
     public GameObject panel;
@@ -69,6 +70,49 @@ public class CurrentChatUI : MonoBehaviour
         {
             RefreshChat();
             ScrollToBottom();
+            SetGamePaused(true);
+        }
+        else
+        {
+            SetGamePaused(false);
+        }
+    }
+
+    private void SetGamePaused(bool paused)
+    {
+        if (paused)
+        {
+            // 不暂停游戏，只禁用视角控制
+            DisablePlayerLook(true);
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+        }
+        else
+        {
+            // 恢复视角控制
+            DisablePlayerLook(false);
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+        }
+    }
+
+    private void DisablePlayerLook(bool disable)
+    {
+        // 查找玩家对象上的 InputManger 组件并禁用/启用
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+        {
+            var inputManager = player.GetComponent<InputManger>();
+            if (inputManager != null)
+            {
+                inputManager.enabled = !disable;
+            }
+            
+            var playerLook = player.GetComponent<PlayerLook>();
+            if (playerLook != null)
+            {
+                playerLook.enabled = !disable;
+            }
         }
     }
 
@@ -79,6 +123,7 @@ public class CurrentChatUI : MonoBehaviour
             panel.SetActive(true);
             RefreshChat();
             ScrollToBottom();
+            SetGamePaused(true);
         }
     }
 
@@ -87,6 +132,7 @@ public class CurrentChatUI : MonoBehaviour
         if (panel != null && panel.activeSelf)
         {
             panel.SetActive(false);
+            SetGamePaused(false);
         }
     }
 
@@ -120,7 +166,9 @@ public class CurrentChatUI : MonoBehaviour
             showSystemMessages || m["role"].ToLower() != "system"
         ).TakeLast(maxMessagesDisplayed).ToList();
         
-        if (showLatestFirst)
+        // 当最早的消息在上面时，需要反转顺序
+        // 因为 Instantiate 会按顺序添加，后添加的在下方
+        if (!showLatestFirst)
         {
             filteredMessages.Reverse();
         }
@@ -167,6 +215,9 @@ public class CurrentChatUI : MonoBehaviour
         var itemObj = Instantiate(messageItemPrefab, messageContainer);
         Debug.Log($"[CurrentChatUI] Instantiated message item: {itemObj.name}");
         
+        itemObj.SetActive(true);
+        Debug.Log($"[CurrentChatUI] Activated message item");
+        
         var messageItem = itemObj.GetComponent<MessageItem>();
         Debug.Log($"[CurrentChatUI] MessageItem component: {(messageItem != null ? "found" : "NOT FOUND")}");
 
@@ -212,13 +263,26 @@ public class CurrentChatUI : MonoBehaviour
 
     private string GetRoleDisplayName(string role)
     {
-        return role.ToLower() switch
+        if (useChineseRoleNames)
         {
-            "user" => "你",
-            "assistant" => "助手",
-            "system" => "系统",
-            _ => role
-        };
+            return role.ToLower() switch
+            {
+                "user" => "你(You)",
+                "assistant" => "助手(Assistant)",
+                "system" => "系统(System)",
+                _ => role
+            };
+        }
+        else
+        {
+            return role.ToLower() switch
+            {
+                "user" => "You",
+                "assistant" => "Assistant",
+                "system" => "System",
+                _ => role
+            };
+        }
     }
 
     private void OnDestroy()

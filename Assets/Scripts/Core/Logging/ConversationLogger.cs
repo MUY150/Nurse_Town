@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -34,7 +35,7 @@ public class ConversationLogger : MonoBehaviour
     public int maxQueueSize = 100;
 
     [Header("保存时机配置")]
-    public bool logOnMessageSent = false;
+    public bool logOnMessageSent = true;
     public bool logOnMessageReceived = true;
     public bool logOnSessionEnd = true;
     public bool logOnSessionStart = true;
@@ -49,6 +50,7 @@ public class ConversationLogger : MonoBehaviour
     private Coroutine _processCoroutine;
     private bool _isProcessing = false;
     private bool _isInitialized = false;
+    private Dictionary<string, string> _pendingRequests = new Dictionary<string, string>();
 
     private void Awake()
     {
@@ -73,16 +75,12 @@ public class ConversationLogger : MonoBehaviour
         if (enableJson)
             _exporters.Add(new JsonExporter());
         if (enableMarkdown)
-            _exporters.Add(new MarkdownExporter(includeSystemPrompt));
+            _exporters.Add(new MarkdownExporter());
 
-        if (logOnMessageSent)
-            ConversationHook.OnMessageSent += HandleMessageSent;
-        if (logOnMessageReceived)
-            ConversationHook.OnMessageReceived += HandleMessageReceived;
-        if (logOnSessionEnd)
-            ConversationHook.OnSessionEnd += HandleSessionEnd;
-        if (logOnSessionStart)
-            ConversationHook.OnSessionStart += HandleSessionStart;
+        LlmEventBus.OnSessionStart += HandleLlmSessionStart;
+        LlmEventBus.OnRequest += HandleLlmRequest;
+        LlmEventBus.OnResponse += HandleLlmResponse;
+        LlmEventBus.OnSessionEnd += HandleLlmSessionEnd;
 
         _processCoroutine = StartCoroutine(ProcessQueueAsync());
         _isInitialized = true;
@@ -90,27 +88,103 @@ public class ConversationLogger : MonoBehaviour
         Debug.Log($"[ConversationLogger] Initialized - SaveLocation: {saveLocation}, Queue: {maxQueueSize}");
     }
 
-    private void HandleMessageSent(ConversationSnapshot snapshot)
+    private void HandleLlmSessionStart(SessionStartEvent e)
     {
-        if (!enableLogging) return;
+        if (!enableLogging || !logOnSessionStart) return;
+
+        var snapshot = new ConversationSnapshot
+        {
+            SessionId = e.SessionId,
+            Provider = e.Provider,
+            Model = "",
+            SystemPrompt = e.SystemPrompt,
+            Timestamp = e.Timestamp,
+            EventType = ConversationEventType.SessionStart,
+            Metadata = new Dictionary<string, object>
+            {
+                { "Scene", e.Scene.ToString() }
+            }
+        };
         EnqueueTask(snapshot);
     }
 
-    private void HandleMessageReceived(ConversationSnapshot snapshot)
+    private void HandleLlmRequest(LlmRequestEvent e)
     {
         if (!enableLogging) return;
+
+        if (!string.IsNullOrEmpty(e.RawRequestBody))
+        {
+            _pendingRequests[e.SessionId] = e.RawRequestBody;
+        }
+
+        if (!logOnMessageSent) return;
+
+        var snapshot = new ConversationSnapshot
+        {
+            SessionId = e.SessionId,
+            Provider = e.Provider,
+            Model = e.Model,
+            Timestamp = e.Timestamp,
+            EventType = ConversationEventType.MessageSent,
+            RawRequestJson = e.RawRequestBody,
+            Messages = e.Messages.Select(m => new MessageSnapshot
+            {
+                Role = m.Role,
+                Content = m.Content
+            }).ToList()
+        };
         EnqueueTask(snapshot);
     }
 
-    private void HandleSessionEnd(ConversationSnapshot snapshot)
+    private void HandleLlmResponse(LlmResponseEvent e)
     {
-        if (!enableLogging) return;
+        if (!enableLogging || !logOnMessageReceived) return;
+
+        string rawRequestJson = null;
+        if (_pendingRequests.TryGetValue(e.SessionId, out var cached))
+        {
+            rawRequestJson = cached;
+            _pendingRequests.Remove(e.SessionId);
+        }
+
+        var snapshot = new ConversationSnapshot
+        {
+            SessionId = e.SessionId,
+            Provider = e.Provider,
+            Model = e.Model,
+            Timestamp = e.Timestamp,
+            EventType = ConversationEventType.MessageReceived,
+            RawRequestJson = rawRequestJson,
+            Statistics = new ConversationStatistics
+            {
+                TotalTokens = e.Usage?.TotalTokens ?? 0,
+                PromptTokens = e.Usage?.PromptTokens ?? 0,
+                CompletionTokens = e.Usage?.CompletionTokens ?? 0
+            }
+        };
+        snapshot.Messages.Add(new MessageSnapshot
+        {
+            Role = "assistant",
+            Content = e.Content
+        });
         EnqueueTask(snapshot);
     }
 
-    private void HandleSessionStart(ConversationSnapshot snapshot)
+    private void HandleLlmSessionEnd(SessionEndEvent e)
     {
-        if (!enableLogging) return;
+        if (!enableLogging || !logOnSessionEnd) return;
+
+        var snapshot = new ConversationSnapshot
+        {
+            SessionId = e.SessionId,
+            Timestamp = e.Timestamp,
+            EventType = ConversationEventType.SessionEnd,
+            Statistics = new ConversationStatistics
+            {
+                TotalMessages = e.TotalMessages,
+                TotalTokens = e.TotalTokens
+            }
+        };
         EnqueueTask(snapshot);
     }
 
@@ -296,10 +370,10 @@ public class ConversationLogger : MonoBehaviour
             StopCoroutine(_processCoroutine);
         }
 
-        ConversationHook.OnMessageSent -= HandleMessageSent;
-        ConversationHook.OnMessageReceived -= HandleMessageReceived;
-        ConversationHook.OnSessionEnd -= HandleSessionEnd;
-        ConversationHook.OnSessionStart -= HandleSessionStart;
+        LlmEventBus.OnSessionStart -= HandleLlmSessionStart;
+        LlmEventBus.OnRequest -= HandleLlmRequest;
+        LlmEventBus.OnResponse -= HandleLlmResponse;
+        LlmEventBus.OnSessionEnd -= HandleLlmSessionEnd;
     }
 
     private void OnApplicationQuit()

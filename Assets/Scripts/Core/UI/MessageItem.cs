@@ -29,6 +29,7 @@ public class MessageItem : MonoBehaviour
         if (messageText != null)
         {
             messageText.text = content;
+            messageText.color = Color.white;
             Debug.Log($"[MessageItem] Set messageText to: {messageText.text?.Substring(0, Mathf.Min(20, messageText.text?.Length ?? 0))}...");
         }
         else
