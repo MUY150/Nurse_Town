@@ -19,11 +19,7 @@ public class CurrentChatUIInitializer : MonoBehaviour
     /// </summary>
     void InitializeChatUI()
     {
-        var chatUI = GetComponent<CurrentChatUI>();
-        if (chatUI == null)
-        {
-            chatUI = GetComponentInChildren<CurrentChatUI>();
-        }
+        var chatUI = FindObjectOfType<CurrentChatUI>();
         if (chatUI == null) return;
 
         // 如果 panel 未设置，尝试使用当前 GameObject
@@ -60,18 +56,14 @@ public class CurrentChatUIInitializer : MonoBehaviour
             chatInputController = GetComponentInChildren<ChatInputController>();
         }
         
-        // 如果场景中没有 ChatInputController，自动创建一个
         if (chatInputController == null)
         {
             chatInputController = gameObject.AddComponent<ChatInputController>();
             Debug.Log("[CurrentChatUIInitializer] Created ChatInputController component");
         }
 
-        var chatUI = GetComponent<CurrentChatUI>();
-        if (chatUI == null)
-        {
-            chatUI = GetComponentInChildren<CurrentChatUI>();
-        }
+        var chatUI = FindObjectOfType<CurrentChatUI>();
+        Debug.Log($"[CurrentChatUIInitializer] FindObjectOfType<CurrentChatUI>: {chatUI != null}");
 
         // 设置 panel 引用
         if (chatInputController.panel == null && chatUI != null && chatUI.panel != null)
@@ -82,14 +74,91 @@ public class CurrentChatUIInitializer : MonoBehaviour
         // 查找并设置 inputField
         if (chatInputController.inputField == null)
         {
-            var inputFieldContainer = transform.Find("InputFieldContainer");
+            if (chatUI == null)
+            {
+                chatUI = FindObjectOfType<CurrentChatUI>();
+            }
+            
+            Transform searchRoot = null;
+            if (chatUI != null && chatUI.panel != null)
+            {
+                searchRoot = chatUI.panel.transform;
+            }
+            else if (chatUI != null)
+            {
+                searchRoot = chatUI.transform;
+            }
+            else
+            {
+                searchRoot = transform;
+            }
+            
+            Debug.Log($"[CurrentChatUIInitializer] Searching for inputField in: {searchRoot.name}");
+            
+            var inputFieldContainer = searchRoot.Find("InputFieldContainer");
             if (inputFieldContainer != null)
             {
                 var inputField = inputFieldContainer.GetComponentInChildren<TMP_InputField>();
                 if (inputField != null)
                 {
                     chatInputController.inputField = inputField;
+                    Debug.Log($"[CurrentChatUIInitializer] Found inputField in InputFieldContainer under {searchRoot.name}");
                 }
+            }
+            
+            if (chatInputController.inputField == null && chatUI != null)
+            {
+                chatInputController.inputField = chatUI.GetComponentInChildren<TMP_InputField>();
+                if (chatInputController.inputField != null)
+                {
+                    Debug.Log($"[CurrentChatUIInitializer] Found inputField via GetComponentInChildren on {chatUI.name}");
+                }
+            }
+            
+            if (chatInputController.inputField == null)
+            {
+                var inputFieldGO = searchRoot.Find("InputField");
+                if (inputFieldGO != null)
+                {
+                    chatInputController.inputField = inputFieldGO.GetComponent<TMP_InputField>();
+                    if (chatInputController.inputField != null)
+                    {
+                        Debug.Log($"[CurrentChatUIInitializer] Found inputField by name 'InputField' under {searchRoot.name}");
+                    }
+                }
+            }
+            
+            if (chatInputController.inputField == null)
+            {
+                var chatInputFieldGO = searchRoot.Find("InputFieldContainer/ChatInputField");
+                if (chatInputFieldGO != null)
+                {
+                    chatInputController.inputField = chatInputFieldGO.GetComponent<TMP_InputField>();
+                    if (chatInputController.inputField != null)
+                    {
+                        Debug.Log($"[CurrentChatUIInitializer] Found inputField at InputFieldContainer/ChatInputField under {searchRoot.name}");
+                    }
+                }
+            }
+            
+            if (chatInputController.inputField == null)
+            {
+                var allInputFields = FindObjectsOfType<TMP_InputField>();
+                Debug.Log($"[CurrentChatUIInitializer] Found {allInputFields.Length} TMP_InputField in scene");
+                foreach (var field in allInputFields)
+                {
+                    if (field.name == "ChatInputField" || field.name.Contains("Input"))
+                    {
+                        chatInputController.inputField = field;
+                        Debug.Log($"[CurrentChatUIInitializer] Found inputField by global search: {field.name}");
+                        break;
+                    }
+                }
+            }
+            
+            if (chatInputController.inputField == null)
+            {
+                Debug.LogWarning($"[CurrentChatUIInitializer] Could not find TMP_InputField. Searched in: {searchRoot.name}");
             }
         }
 

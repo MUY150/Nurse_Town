@@ -146,9 +146,14 @@ public class ChatInputController : MonoBehaviour
         if (panel == null) return;
         
         panel.SetActive(true);
-        inputField?.ActivateInputField();
         
+        // 先转换到 ChatPanel_Open 状态
+        GameInputStateMachine.Instance?.TransitionTo(GameInputState.ChatPanel_Open);
+        
+        // 然后激活输入框并转换到 Focused 状态
+        inputField?.ActivateInputField();
         GameInputStateMachine.Instance?.TransitionTo(GameInputState.ChatPanel_Focused);
+        
         chatUI?.RefreshChat();
     }
     
