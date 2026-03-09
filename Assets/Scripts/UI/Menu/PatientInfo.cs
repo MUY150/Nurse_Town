@@ -25,10 +25,14 @@ namespace UI.Menu
         /// </summary>
         void Update()
         {
-            // 输入检测：检测I键按下
+            if (GameInputStateMachine.Instance != null && 
+                GameInputStateMachine.Instance.IsUIActive())
+            {
+                return;
+            }
+            
             if (Input.GetKeyDown(KeyCode.I))
             {
-                // 切换病人信息显示状态
                 ToggleInfo();
             }
         }

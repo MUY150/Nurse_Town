@@ -6,6 +6,11 @@ namespace UI
     {
         void Update()
         {
+            if (GameInputStateMachine.Instance != null && 
+                GameInputStateMachine.Instance.IsUIActive())
+            {
+                return;
+            }
         
             if (Input.GetKeyDown(KeyCode.Return))
             {

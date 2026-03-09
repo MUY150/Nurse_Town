@@ -39,6 +39,12 @@ public class ScoreManager : Singleton<ScoreManager>
 
     void Update()
     {
+        if (GameInputStateMachine.Instance != null && 
+            GameInputStateMachine.Instance.IsUIActive())
+        {
+            return;
+        }
+    
         if (Input.GetKeyDown(KeyCode.E))
         {
             Debug.Log("E key pressed — submitting full evaluation.");

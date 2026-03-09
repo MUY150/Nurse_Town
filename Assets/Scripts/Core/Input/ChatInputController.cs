@@ -31,6 +31,9 @@ public class ChatInputController : MonoBehaviour
     private List<string> _inputHistory = new();
     private int _historyIndex = -1;
     private string _currentDraft = "";
+    private bool _isActivatingInputField = false;
+    private float _activateInputFieldTime = 0f;
+    private const float INPUT_FIELD_ACTIVATE_DELAY = 0.2f;
     
     void Awake()
     {
@@ -87,10 +90,19 @@ public class ChatInputController : MonoBehaviour
     
     void Update()
     {
-        // 历史记录导航（使用旧Input System的KeyCode，因为TMP_InputField需要）
+        if (_isActivatingInputField)
+        {
+            _activateInputFieldTime += Time.deltaTime;
+            if (_activateInputFieldTime >= INPUT_FIELD_ACTIVATE_DELAY)
+            {
+                _isActivatingInputField = false;
+                _activateInputFieldTime = 0f;
+            }
+            return;
+        }
+        
         HandleHistoryNavigation();
         
-        // 根据UI状态更新状态机
         UpdateStateBasedOnUI();
     }
     
@@ -152,18 +164,16 @@ public class ChatInputController : MonoBehaviour
         
         panel.SetActive(true);
         
-        // 定位输入框到 ChatUI 上方
         if (positionInputFieldAboveChat)
         {
             PositionInputFieldAboveChat();
         }
         
-        // 先转换到 ChatPanel_Open 状态
         GameInputStateMachine.Instance?.TransitionTo(GameInputState.ChatPanel_Open);
         
-        // 然后激活输入框并转换到 Focused 状态
+        _isActivatingInputField = true;
+        _activateInputFieldTime = 0f;
         inputField?.ActivateInputField();
-        GameInputStateMachine.Instance?.TransitionTo(GameInputState.ChatPanel_Focused);
         
         chatUI?.RefreshChat();
     }

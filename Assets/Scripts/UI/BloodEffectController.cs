@@ -88,13 +88,16 @@ public class BloodEffectController : MonoBehaviour
     /// </summary>
     void Update()
     {
-        // 更新血液显示状态
         blood.enabled = showBlood;
         
-        // 输入检测：如果可以测量血压且按下F键
+        if (GameInputStateMachine.Instance != null && 
+            GameInputStateMachine.Instance.IsUIActive())
+        {
+            return;
+        }
+        
         if (canMeasureBloodPressure && Input.GetKeyDown(KeyCode.F))
         {
-            // 执行血压测量
             MeasureBloodPressure();
         }
     }
