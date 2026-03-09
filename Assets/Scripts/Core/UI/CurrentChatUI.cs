@@ -237,14 +237,21 @@ public class CurrentChatUI : MonoBehaviour
     public void SendUserMessage(string message)
     {
         Debug.Log($"[CurrentChatUI] SendUserMessage: {message}");
-        if (sitPatientSpeech.Instance != null)
+        
+        #pragma warning disable CS0618
+        if (PatientDialogueController.Instance != null)
+        {
+            PatientDialogueController.Instance.ReceiveNurseTranscription(message);
+        }
+        else if (sitPatientSpeech.Instance != null)
         {
             sitPatientSpeech.Instance.ReceiveNurseTranscription(message);
         }
         else
         {
-            Debug.LogWarning("[CurrentChatUI] sitPatientSpeech.Instance is null, cannot send message");
+            Debug.LogWarning("[CurrentChatUI] No patient dialogue controller found, cannot send message");
         }
+        #pragma warning restore CS0618
     }
 
     private void ScrollToTop()

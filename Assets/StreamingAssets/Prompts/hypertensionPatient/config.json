@@ -1,0 +1,9 @@
+{
+    "scenarioName": "hypertensionPatient",
+    "patientName": "Mrs. Johnson",
+    "maxEmotionCode": 4,
+    "useTimelineEmotion": false,
+    "useAnimatorEmotion": true,
+    "enableChatUI": true,
+    "variantFiles": ["patient1.txt", "patient2.txt", "patient3.txt"]
+}

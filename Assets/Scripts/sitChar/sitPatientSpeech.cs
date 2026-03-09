@@ -7,8 +7,10 @@ using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using uLipSync;
 
+[Obsolete("Use PatientDialogueController instead. This class will be removed in v2.0. To migrate: Replace sitPatientSpeech component with PatientDialogueController and set scenarioName to 'hypertensionPatient'.")]
 public class sitPatientSpeech : MonoBehaviour
 {
+    [Obsolete("Use PatientDialogueController.Instance instead")]
     public static sitPatientSpeech Instance;
     private ILlmClient _llmClient;
     private CharacterAnimationController animationController;

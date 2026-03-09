@@ -6,8 +6,10 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 
+[Obsolete("Use PatientDialogueController instead. This class will be removed in v2.0. To migrate: Replace OpenAIRequest component with PatientDialogueController on your GameObject.")]
 public class OpenAIRequest : MonoBehaviour
 {
+    [Obsolete("Use PatientDialogueController.Instance instead")]
     public static OpenAIRequest Instance;
     private ILlmClient _llmClient;
     public string currentScenario = "brocaAphasia";

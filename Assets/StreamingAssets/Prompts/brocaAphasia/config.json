@@ -1,0 +1,9 @@
+{
+    "scenarioName": "brocaAphasia",
+    "patientName": "Mr. James Harris",
+    "maxEmotionCode": 5,
+    "useTimelineEmotion": true,
+    "useAnimatorEmotion": false,
+    "enableChatUI": false,
+    "variantFiles": ["patient1.txt", "patient2.txt", "patient3.txt"]
+}

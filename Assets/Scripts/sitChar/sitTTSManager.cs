@@ -38,10 +38,11 @@ using Newtonsoft.Json.Linq;
 /// - UnityWebRequestMultimedia：Unity多媒体HTTP请求
 /// - Environment.GetEnvironmentVariable：获取环境变量
 /// </remarks>
-public class sitTTSManager : MonoBehaviour
+public class sitTTSManager : MonoBehaviour, ITTSProvider
 {
-    // 单例模式：静态实例，确保全局唯一
     public static sitTTSManager Instance { get; private set; }
+    
+    public bool IsAvailable => audioSource != null;
 
     // 公共字段：音频源组件
     public AudioSource audioSource;

@@ -33,10 +33,11 @@ using System.Text.RegularExpressions;
 /// - Guid：生成唯一标识符
 /// - 条件运算符：三元运算符 ?:
 /// </remarks>
-public class TTSManager : MonoBehaviour
+public class TTSManager : MonoBehaviour, ITTSProvider
 {
-    // 单例模式：静态实例，确保全局唯一
     public static TTSManager Instance { get; private set; }
+    
+    public bool IsAvailable => audioSource != null;
 
     [Header("Audio Settings")]
     [Tooltip("Reference to the AudioSource where the speech will be played")]
