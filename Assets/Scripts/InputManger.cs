@@ -46,13 +46,30 @@ public class InputManger : MonoBehaviour
     
     void Start()
     {
-        // 在Start中查找ChatInputController，因为CurrentChatUIInitializer在Start中创建它
         chatInputController = FindObjectOfType<ChatInputController>();
         Debug.Log($"[InputManger] Start - chatInputController: {chatInputController != null}");
         
         if (chatInputController == null)
         {
             Debug.LogWarning("[InputManger] ChatInputController not found in scene. Enter/F1 keys will not work.");
+        }
+    }
+    
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            var stateMachine = GameInputStateMachine.Instance;
+            if (stateMachine != null && stateMachine.CurrentState != GameInputState.Gameplay)
+            {
+                if (chatInputController == null)
+                    chatInputController = FindObjectOfType<ChatInputController>();
+                    
+                if (chatInputController != null && chatInputController.panel != null && chatInputController.panel.activeSelf)
+                {
+                    chatInputController.HidePanel();
+                }
+            }
         }
     }
     

@@ -22,18 +22,30 @@ public class sitPatientSpeech : MonoBehaviour
 
     void Awake()
     {
+        Debug.Log($"[sitPatientSpeech] Awake called on {gameObject.name}, Instance={(Instance == null ? "null" : Instance.gameObject.name)}");
         if (Instance == null)
         {
             Instance = this;
+            Debug.Log($"[sitPatientSpeech] Instance set to {gameObject.name}");
         }
         else
         {
+            Debug.Log($"[sitPatientSpeech] Destroying duplicate on {gameObject.name}");
             Destroy(gameObject);
         }
     }
 
     void Start()
     {
+        Debug.Log($"[sitPatientSpeech] Start called on {gameObject.name}, active={gameObject.activeInHierarchy}, Instance={(Instance == this ? "THIS" : (Instance == null ? "null" : "OTHER"))}");
+        
+        // 如果 Instance 不是 this，说明这个实例应该被销毁了，不执行初始化
+        if (Instance != this)
+        {
+            Debug.Log($"[sitPatientSpeech] Skipping Start on {gameObject.name} because Instance is not this");
+            return;
+        }
+        
         ApiConfig.Initialize();
         InitializePatientInstructions();
         InitializeLLMClient();

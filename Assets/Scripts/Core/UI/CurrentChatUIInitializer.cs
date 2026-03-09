@@ -177,5 +177,86 @@ public class CurrentChatUIInitializer : MonoBehaviour
                 chatInputController.voiceController = player.GetComponent<VoiceInputController>();
             }
         }
+
+        // 初始化输入框字体
+        InitializeInputFieldFont(chatInputController.inputField);
+    }
+
+    void InitializeInputFieldFont(TMP_InputField inputField)
+    {
+        if (inputField == null) return;
+
+        TMP_FontAsset chineseFont = null;
+        
+#if UNITY_EDITOR
+        chineseFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/msyhl SDF.asset");
+        if (chineseFont == null)
+        {
+            chineseFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Fonts/msyh SDF.asset");
+        }
+        
+        if (chineseFont == null)
+        {
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("msyh t:TMP_FontAsset");
+            if (guids.Length > 0)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                chineseFont = UnityEditor.AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
+            }
+        }
+#endif
+        
+        if (chineseFont == null)
+        {
+            var chatUI = FindObjectOfType<CurrentChatUI>();
+            if (chatUI != null && chatUI.messageItemPrefab != null)
+            {
+                var textComponents = chatUI.messageItemPrefab.GetComponentsInChildren<TextMeshProUGUI>(true);
+                if (textComponents.Length > 0 && textComponents[0].font != null)
+                {
+                    chineseFont = textComponents[0].font;
+                    Debug.Log($"[CurrentChatUIInitializer] Got font from MessageItemPrefab: {chineseFont.name}");
+                }
+            }
+        }
+        
+        if (chineseFont == null)
+        {
+            Debug.LogWarning("[CurrentChatUIInitializer] Could not load Chinese font for input field");
+            return;
+        }
+
+        var textArea = inputField.transform.Find("Text Area");
+        var placeholder = inputField.transform.Find("Placeholder");
+
+        if (textArea != null)
+        {
+            var textComponent = textArea.GetComponent<TextMeshProUGUI>();
+            if (textComponent != null)
+            {
+                inputField.textViewport = textArea.GetComponent<RectTransform>();
+                inputField.textComponent = textComponent;
+                textComponent.font = chineseFont;
+                textComponent.color = Color.white;
+                Debug.Log($"[CurrentChatUIInitializer] Set font on inputField.textComponent");
+            }
+        }
+
+        if (placeholder != null)
+        {
+            var placeholderText = placeholder.GetComponent<TextMeshProUGUI>();
+            if (placeholderText != null)
+            {
+                inputField.placeholder = placeholderText;
+                placeholderText.font = chineseFont;
+                placeholderText.text = "输入消息...";
+                Debug.Log($"[CurrentChatUIInitializer] Set font on inputField.placeholder");
+            }
+        }
+
+        inputField.lineType = TMP_InputField.LineType.SingleLine;
+        inputField.restoreOriginalTextOnEscape = false;
+        
+        Debug.Log($"[CurrentChatUIInitializer] Input field font initialized with: {chineseFont.name}");
     }
 }

@@ -23,12 +23,15 @@ public class OpenAIRequest : MonoBehaviour
 
     void Awake()
     {
+        Debug.Log($"[OpenAIRequest] Awake called on {gameObject.name}, Instance={(Instance == null ? "null" : Instance.gameObject.name)}");
         if (Instance == null)
         {
             Instance = this;
+            Debug.Log($"[OpenAIRequest] Instance set to {gameObject.name}");
         }
         else
         {
+            Debug.Log($"[OpenAIRequest] Destroying duplicate on {gameObject.name}");
             Destroy(gameObject);
         }
     }
@@ -46,10 +49,29 @@ public class OpenAIRequest : MonoBehaviour
 
     void Start()
     {
+        Debug.Log($"[OpenAIRequest] Start called on {gameObject.name}, active={gameObject.activeInHierarchy}, Instance={(Instance == this ? "THIS" : (Instance == null ? "null" : "OTHER"))}");
+        
+        // 如果 Instance 不是 this，说明这个实例应该被销毁了，不执行初始化
+        if (Instance != this)
+        {
+            Debug.Log($"[OpenAIRequest] Skipping Start on {gameObject.name} because Instance is not this");
+            return;
+        }
+        
         ApiConfig.Initialize();
         apiKey = EnvironmentLoader.GetEnvVariable("DEEPSEEK_API_KEY") ?? EnvironmentLoader.GetEnvVariable("OPENAI_API_KEY");
         basePath = Path.Combine(Application.streamingAssetsPath, "Prompts", currentScenario);
-        ScoreManager.Instance.Initialize(currentScenario);
+        
+        // 检查 ScoreManager.Instance 是否为 null
+        if (ScoreManager.Instance != null)
+        {
+            ScoreManager.Instance.Initialize(currentScenario);
+        }
+        else
+        {
+            Debug.LogWarning("[OpenAIRequest] ScoreManager.Instance is null. Skipping initialization.");
+        }
+        
         InitializePatientInstructions();
         InitializeLLMClient();
 
@@ -63,7 +85,7 @@ public class OpenAIRequest : MonoBehaviour
             emotionController = FindObjectOfType<EmotionController>();
             if (emotionController == null)
             {
-                Debug.LogError("EmotionController component not found on the GameObject or in the scene.");
+                Debug.LogWarning("[OpenAIRequest] EmotionController not found. Emotion animations will be disabled.");
             }
         }
     }

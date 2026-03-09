@@ -31,10 +31,13 @@ namespace UI.Menu
         /// </summary>
         void Update()
         {
-            // 输入检测：检测Esc键按下
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                // 切换暂停状态
+                var stateMachine = GameInputStateMachine.Instance;
+                if (stateMachine != null && stateMachine.CurrentState != GameInputState.Gameplay)
+                {
+                    return;
+                }
                 TogglePause();
             }
         }

@@ -18,6 +18,11 @@ public class ChatInputController : MonoBehaviour
     public CurrentChatUI chatUI;
     public VoiceInputController voiceController;
     
+    [Header("输入框位置设置")]
+    public bool positionInputFieldAboveChat = true;
+    public float inputFieldHeight = 50;
+    public float inputFieldSpacing = 10;
+    
     [Header("输入动作 - 通过PlayerInput配置")]
     public InputActionReference toggleChatAction;
     public InputActionReference sendMessageAction;
@@ -147,6 +152,12 @@ public class ChatInputController : MonoBehaviour
         
         panel.SetActive(true);
         
+        // 定位输入框到 ChatUI 上方
+        if (positionInputFieldAboveChat)
+        {
+            PositionInputFieldAboveChat();
+        }
+        
         // 先转换到 ChatPanel_Open 状态
         GameInputStateMachine.Instance?.TransitionTo(GameInputState.ChatPanel_Open);
         
@@ -155,6 +166,39 @@ public class ChatInputController : MonoBehaviour
         GameInputStateMachine.Instance?.TransitionTo(GameInputState.ChatPanel_Focused);
         
         chatUI?.RefreshChat();
+    }
+    
+    /// <summary>
+    /// 将输入框定位到 ChatUI 下方
+    /// </summary>
+    private void PositionInputFieldAboveChat()
+    {
+        if (inputField == null || chatUI == null) return;
+        
+        RectTransform inputFieldRect = inputField.GetComponent<RectTransform>();
+        RectTransform chatUIRect = chatUI.GetComponent<RectTransform>();
+        
+        if (inputFieldRect == null || chatUIRect == null) return;
+        
+        // 设置输入框锚点为左下角（与 ChatUI 一致）
+        inputFieldRect.anchorMin = new Vector2(0, 0);
+        inputFieldRect.anchorMax = new Vector2(0, 0);
+        inputFieldRect.pivot = new Vector2(0, 0);
+        
+        // 计算输入框位置：在 ChatUI 下方
+        float chatUIOffsetY = chatUIRect.anchoredPosition.y;
+        
+        // 输入框位于 ChatUI 下方，保持相同的 X 偏移
+        float inputFieldX = chatUIRect.anchoredPosition.x;
+        float inputFieldY = chatUIOffsetY - inputFieldHeight - inputFieldSpacing;
+        
+        inputFieldRect.anchoredPosition = new Vector2(inputFieldX, inputFieldY);
+        
+        // 设置输入框宽度与 ChatUI 一致
+        float inputFieldWidth = chatUIRect.sizeDelta.x;
+        inputFieldRect.sizeDelta = new Vector2(inputFieldWidth, inputFieldHeight);
+        
+        Debug.Log($"[ChatInputController] InputField positioned below ChatUI at ({inputFieldX}, {inputFieldY}), size: {inputFieldWidth}x{inputFieldHeight}");
     }
     
     /// <summary>

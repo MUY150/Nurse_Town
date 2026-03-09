@@ -26,20 +26,15 @@ using Newtonsoft.Json.Linq;
 /// - JSON序列化：JsonConvert处理JSON数据
 /// - 字符串插值：$""语法
 /// </remarks>
-public class ScoreManager : MonoBehaviour
+public class ScoreManager : Singleton<ScoreManager>
 {
-    public static ScoreManager Instance;
-
     private string scoringPrompt = "";
     private string currentScenario = "";
     private List<ConversationTurn> conversationTurns = new List<ConversationTurn>();
 
-    void Awake()
+    protected override void Awake()
     {
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
+        base.Awake();
     }
 
     void Update()
@@ -113,6 +108,13 @@ public class ScoreManager : MonoBehaviour
         if (string.IsNullOrEmpty(scoringPrompt))
         {
             Debug.LogWarning("Scoring prompt not loaded.");
+            yield break;
+        }
+
+        // 检查 OpenAIRequest.Instance 是否为 null
+        if (OpenAIRequest.Instance == null)
+        {
+            Debug.LogWarning("[ScoreManager] OpenAIRequest.Instance is null. Cannot send evaluation request.");
             yield break;
         }
 

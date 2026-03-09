@@ -25,6 +25,12 @@ public class CurrentChatUI : MonoBehaviour
     public GameObject messageItemPrefab;
     public ScrollRect scrollRect;
 
+    [Header("位置设置")]
+    public bool positionAtBottomLeft = true;
+    public Vector2 bottomLeftOffset = new Vector2(20, 20);
+    public float chatUIWidth = 500;
+    public float chatUIHeight = 350;
+
     private ILlmClient _currentLlmClient;
     private List<GameObject> _messageItems = new List<GameObject>();
 
@@ -34,6 +40,36 @@ public class CurrentChatUI : MonoBehaviour
         {
             panel.SetActive(false);
         }
+    }
+
+    private void Start()
+    {
+        if (positionAtBottomLeft)
+        {
+            PositionAtBottomLeft();
+        }
+    }
+
+    /// <summary>
+    /// 将 ChatUI 定位到屏幕左下角
+    /// </summary>
+    private void PositionAtBottomLeft()
+    {
+        RectTransform rectTransform = GetComponent<RectTransform>();
+        if (rectTransform == null) return;
+
+        // 设置锚点为左下角
+        rectTransform.anchorMin = new Vector2(0, 0);
+        rectTransform.anchorMax = new Vector2(0, 0);
+        rectTransform.pivot = new Vector2(0, 0);
+
+        // 设置位置偏移
+        rectTransform.anchoredPosition = bottomLeftOffset;
+
+        // 设置尺寸
+        rectTransform.sizeDelta = new Vector2(chatUIWidth, chatUIHeight);
+
+        Debug.Log($"[CurrentChatUI] Positioned at bottom left. Offset: {bottomLeftOffset}, Size: {chatUIWidth}x{chatUIHeight}");
     }
 
     /// <summary>

@@ -139,7 +139,7 @@ public class TTSManager : MonoBehaviour
         emotionController = FindObjectOfType<EmotionController>();
         if (emotionController == null)
         {
-            Debug.LogError("EmotionController not found in the scene. Make sure it exists!");
+            Debug.LogWarning("[TTSManager] EmotionController not found in the scene. Emotion animations will be disabled.");
         }
     }
 
@@ -232,18 +232,62 @@ public class TTSManager : MonoBehaviour
 
             // 解析JSON响应
             var jsonResponse = JsonConvert.DeserializeObject<QwenTTSResponse>(responseBody);
-            if (jsonResponse?.output?.audio_data == null)
+            
+            // 优先尝试新版API格式 (audio.url)
+            if (jsonResponse?.output?.audio?.url != null)
             {
-                Debug.LogError("Missing audio_data in Qwen TTS response");
-                return null;
+                string audioUrl = jsonResponse.output.audio.url;
+                Debug.Log($"[TTSManager] Got audio URL from new API format: {audioUrl}");
+                
+                // 如果 data 字段有值，优先使用 Base64 数据
+                if (!string.IsNullOrEmpty(jsonResponse.output.audio.data))
+                {
+                    Debug.Log("[TTSManager] Using Base64 data from new API format");
+                    return Convert.FromBase64String(jsonResponse.output.audio.data);
+                }
+                
+                // 否则从 URL 下载音频
+                Debug.Log("[TTSManager] Downloading audio from URL...");
+                return await DownloadAudioFromUrl(audioUrl);
             }
-
-            // 将Base64解码为byte[]
-            return Convert.FromBase64String(jsonResponse.output.audio_data);
+            
+            // 兼容旧版API格式 (audio_data)
+            if (jsonResponse?.output?.audio_data != null)
+            {
+                Debug.Log("[TTSManager] Using Base64 data from old API format");
+                return Convert.FromBase64String(jsonResponse.output.audio_data);
+            }
+            
+            Debug.LogError($"[TTSManager] Missing audio data in Qwen TTS response. Response body: {responseBody}");
+            return null;
         }
         catch (Exception ex)
         {
             Debug.LogError($"Exception in GetQwenTTSAudio: {ex.Message}\n{ex.StackTrace}");
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// 从URL下载音频数据
+    /// </summary>
+    /// <param name="url">音频文件URL</param>
+    /// <returns>音频字节数组</returns>
+    private async Task<byte[]> DownloadAudioFromUrl(string url)
+    {
+        try
+        {
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
+                byte[] audioData = await httpClient.GetByteArrayAsync(url);
+                Debug.Log($"[TTSManager] Successfully downloaded audio from URL: {audioData.Length} bytes");
+                return audioData;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[TTSManager] Failed to download audio from URL: {ex.Message}");
             return null;
         }
     }
@@ -355,7 +399,7 @@ public class TTSManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Qwen TTS响应数据结构
+    /// Qwen TTS响应数据结构 - 支持新版API格式
     /// </summary>
     [Serializable]
     private class QwenTTSResponse
@@ -364,12 +408,25 @@ public class TTSManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 输出数据结构
+    /// 输出数据结构 - 支持新版API格式 (audio对象包含url和data)
     /// </summary>
     [Serializable]
     private class Output
     {
-        public string audio_data; // Base64字符串
+        public string audio_data; // 旧版API: Base64字符串
+        public AudioInfo audio;   // 新版API: 音频信息对象
+    }
+
+    /// <summary>
+    /// 音频信息数据结构 (新版API)
+    /// </summary>
+    [Serializable]
+    private class AudioInfo
+    {
+        public string data;       // Base64数据 (可能为空)
+        public string url;        // 音频URL
+        public string id;         // 音频ID
+        public long expires_at;   // 过期时间戳
     }
 
     /// <summary>
