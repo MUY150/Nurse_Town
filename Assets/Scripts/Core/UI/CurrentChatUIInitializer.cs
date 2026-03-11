@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// CurrentChatUI 初始化器
@@ -228,17 +229,21 @@ public class CurrentChatUIInitializer : MonoBehaviour
 
         var textArea = inputField.transform.Find("Text Area");
         var placeholder = inputField.transform.Find("Placeholder");
+        TextMeshProUGUI textComponent = null;
 
         if (textArea != null)
         {
-            var textComponent = textArea.GetComponent<TextMeshProUGUI>();
+            textComponent = textArea.GetComponent<TextMeshProUGUI>();
             if (textComponent != null)
             {
                 inputField.textViewport = textArea.GetComponent<RectTransform>();
                 inputField.textComponent = textComponent;
                 textComponent.font = chineseFont;
-                textComponent.color = Color.white;
-                Debug.Log($"[CurrentChatUIInitializer] Set font on inputField.textComponent");
+                textComponent.color = new Color(1f, 1f, 1f, 1f);
+                textComponent.fontSize = 18;
+                textComponent.enableWordWrapping = false;
+                textComponent.alignment = TextAlignmentOptions.Left;
+                Debug.Log($"[CurrentChatUIInitializer] Set font on inputField.textComponent, color: white, fontSize: {textComponent.fontSize}");
             }
         }
 
@@ -250,13 +255,72 @@ public class CurrentChatUIInitializer : MonoBehaviour
                 inputField.placeholder = placeholderText;
                 placeholderText.font = chineseFont;
                 placeholderText.text = "输入消息...";
-                Debug.Log($"[CurrentChatUIInitializer] Set font on inputField.placeholder");
+                placeholderText.color = new Color(0.7f, 0.7f, 0.7f, 1f);
+                placeholderText.fontSize = textComponent != null ? textComponent.fontSize : 18;
+                Debug.Log($"[CurrentChatUIInitializer] Set font on inputField.placeholder with color gray");
             }
         }
 
         inputField.lineType = TMP_InputField.LineType.SingleLine;
         inputField.restoreOriginalTextOnEscape = false;
         
-        Debug.Log($"[CurrentChatUIInitializer] Input field font initialized with: {chineseFont.name}");
+        // 设置输入框背景 - 使用 InputFieldContainer 的背景
+        var inputFieldContainer = inputField.transform.parent;
+        Image containerImage = null;
+        if (inputFieldContainer != null)
+        {
+            containerImage = inputFieldContainer.GetComponent<Image>();
+            if (containerImage != null)
+            {
+                Debug.Log($"[CurrentChatUIInitializer] InputFieldContainer Image found, original color: {containerImage.color}");
+                containerImage.color = new Color(0.15f, 0.15f, 0.15f, 0.95f);
+                containerImage.raycastTarget = true;
+                Debug.Log($"[CurrentChatUIInitializer] Set InputFieldContainer background color to: {containerImage.color}");
+                
+                // 确保 InputFieldContainer 的 RectTransform 正确
+                var containerRect = inputFieldContainer.GetComponent<RectTransform>();
+                if (containerRect != null)
+                {
+                    Debug.Log($"[CurrentChatUIInitializer] InputFieldContainer rect: pos={containerRect.anchoredPosition}, size={containerRect.sizeDelta}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"[CurrentChatUIInitializer] InputFieldContainer does NOT have Image component!");
+            }
+        }
+        else
+        {
+            Debug.LogError($"[CurrentChatUIInitializer] InputField has NO parent!");
+        }
+        
+        // 设置 TMP_InputField 的 targetGraphic (用于显示选中/高亮状态)
+        if (containerImage != null)
+        {
+            var targetGraphicProperty = inputField.GetType().GetProperty("targetGraphic");
+            if (targetGraphicProperty != null)
+            {
+                targetGraphicProperty.SetValue(inputField, containerImage);
+            }
+        }
+        
+        // 刷新文本组件以应用更改
+        if (textComponent != null)
+        {
+            textComponent.SetVerticesDirty();
+            textComponent.SetLayoutDirty();
+        }
+        
+        var placeholderRef = inputField.placeholder as TextMeshProUGUI;
+        if (placeholderRef != null)
+        {
+            placeholderRef.SetVerticesDirty();
+            placeholderRef.SetLayoutDirty();
+        }
+        
+        // 强制更新输入框布局
+        LayoutRebuilder.ForceRebuildLayoutImmediate(inputField.GetComponent<RectTransform>());
+        
+        Debug.Log($"[CurrentChatUIInitializer] Input field initialized with: {chineseFont.name}, textViewport: {inputField.textViewport != null}, textComponent: {inputField.textComponent != null}, placeholder: {inputField.placeholder != null}");
     }
 }

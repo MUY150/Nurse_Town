@@ -27,9 +27,12 @@ public class CurrentChatUI : MonoBehaviour
 
     [Header("位置设置")]
     public bool positionAtBottomLeft = true;
-    public Vector2 bottomLeftOffset = new Vector2(20, 20);
+    public Vector2 bottomLeftOffset = new Vector2(10, 20);  // 更靠左（X 值更小）
     public float chatUIWidth = 500;
     public float chatUIHeight = 350;
+    
+    [Header("滚动设置")]
+    public bool scrollToLatestOnOpen = true;
 
     private ILlmClient _currentLlmClient;
     private List<GameObject> _messageItems = new List<GameObject>();
@@ -58,18 +61,32 @@ public class CurrentChatUI : MonoBehaviour
         RectTransform rectTransform = GetComponent<RectTransform>();
         if (rectTransform == null) return;
 
-        // 设置锚点为左下角
-        rectTransform.anchorMin = new Vector2(0, 0);
-        rectTransform.anchorMax = new Vector2(0, 0);
+        // 获取 Canvas 和屏幕尺寸
+        Canvas canvas = GetComponentInParent<Canvas>();
+        if (canvas == null) return;
+        
+        // 设置锚点为中心，这样可以精确控制位置
+        rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+        rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
         rectTransform.pivot = new Vector2(0, 0);
-
-        // 设置位置偏移
-        rectTransform.anchoredPosition = bottomLeftOffset;
+        
+        // 计算屏幕左下角相对于 Canvas 中心的坐标
+        // Canvas 中心是 (0, 0)，左下角是 (-width/2, -height/2)
+        float canvasWidth = Screen.width;
+        float canvasHeight = Screen.height;
+        
+        // 目标位置：从屏幕左下角偏移 bottomLeftOffset
+        float targetX = -canvasWidth / 2 + bottomLeftOffset.x;
+        float targetY = -canvasHeight / 2 + bottomLeftOffset.y;
+        
+        rectTransform.anchoredPosition = new Vector2(targetX, targetY);
 
         // 设置尺寸
         rectTransform.sizeDelta = new Vector2(chatUIWidth, chatUIHeight);
-
-        Debug.Log($"[CurrentChatUI] Positioned at bottom left. Offset: {bottomLeftOffset}, Size: {chatUIWidth}x{chatUIHeight}");
+        
+        Debug.Log($"[CurrentChatUI] Canvas screen size: {canvasWidth}x{canvasHeight}");
+        Debug.Log($"[CurrentChatUI] Positioned at bottom left. Target pos: ({targetX}, {targetY}), Size: {chatUIWidth}x{chatUIHeight}");
+        Debug.Log($"[CurrentChatUI] RectTransform: anchorMin={rectTransform.anchorMin}, anchorMax={rectTransform.anchorMax}, pivot={rectTransform.pivot}, pos={rectTransform.anchoredPosition}");
     }
 
     /// <summary>
@@ -117,7 +134,13 @@ public class CurrentChatUI : MonoBehaviour
         
         panel.SetActive(true);
         RefreshChat();
-        ScrollToBottom();
+        
+        // 重新打开时优先显示最新消息
+        if (scrollToLatestOnOpen)
+        {
+            ScrollToBottom();
+        }
+        
         SetGamePaused(true);
     }
 

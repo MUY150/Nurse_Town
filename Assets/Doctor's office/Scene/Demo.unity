@@ -399,6 +399,10 @@ MonoBehaviour:
   messageContainer: {fileID: 609770435}
   messageItemPrefab: {fileID: 198972821}
   scrollRect: {fileID: 321692030}
+  positionAtBottomLeft: 1
+  bottomLeftOffset: {x: 20, y: 20}
+  chatUIWidth: 500
+  chatUIHeight: 350
 --- !u!114 &133723870
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -580,7 +584,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!82 &159334143
 AudioSource:
   m_ObjectHideFlags: 0
@@ -2078,7 +2082,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 1ddd715e21aee8e4883d3f712dc19c77, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 1ddd715e21aee8e4883d3f712dc19c77, type: 3}
       propertyPath: m_Controller
@@ -3018,7 +3022,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 873283131}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cc9937d0c085413448fdeabd649f478d, type: 3}
   m_Name: 
@@ -3035,6 +3039,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 88090d567ebb547fb96a126739dd232d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &873283142
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 873283131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5fad06a6791dd5047a67a093d8ef2454, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scenarioName: hypertensionPatient
+  loadFromFile: 1
+  emotionController: {fileID: 0}
+  animController: {fileID: 0}
+  bloodEffectController: {fileID: 0}
 --- !u!1 &897696203
 GameObject:
   m_ObjectHideFlags: 0
@@ -4362,7 +4383,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1357197758
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4922,6 +4943,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: char3
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 08cddf2bab07b64448c695d33c7c7b8c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4781595871804185436, guid: 08cddf2bab07b64448c695d33c7c7b8c, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0
@@ -5140,6 +5165,10 @@ PrefabInstance:
     - target: {fileID: 919132149155446097, guid: f3f9d946862d956429a6063546313893, type: 3}
       propertyPath: m_Name
       value: char2
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: f3f9d946862d956429a6063546313893, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: f3f9d946862d956429a6063546313893, type: 3}
       propertyPath: m_Controller
@@ -5394,6 +5423,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 873283140}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 873283142}
     - targetCorrespondingSourceObject: {fileID: 6986090424390163306, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 588805914}
@@ -5459,8 +5491,8 @@ MonoBehaviour:
   m_text: "\u8F93\u5165\u6D88\u606F..."
   m_enableAdvanceTextProcess: 0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 5ddf62e8b3e8adf479bf833d861e112a, type: 2}
+  m_sharedMaterial: {fileID: 7611732303485858688, guid: 5ddf62e8b3e8adf479bf833d861e112a, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
