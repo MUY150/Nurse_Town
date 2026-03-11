@@ -38,6 +38,7 @@ using Newtonsoft.Json.Linq;
 /// - UnityWebRequestMultimedia：Unity多媒体HTTP请求
 /// - Environment.GetEnvironmentVariable：获取环境变量
 /// </remarks>
+[Obsolete("Use TTSManager with CharacterType.Sitting instead. This class will be removed in v2.0")]
 public class sitTTSManager : MonoBehaviour, ITTSProvider
 {
     public static sitTTSManager Instance { get; private set; }

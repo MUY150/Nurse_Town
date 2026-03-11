@@ -12,6 +12,7 @@ using System.Text.RegularExpressions;
 
 /// <summary>
 /// 文本转语音管理器，负责将文本转换为语音并播放，支持Qwen TTS API和Audio2Face集成
+/// 支持站立和坐姿角色类型，通过CharacterType配置
 /// </summary>
 /// <remarks>
 /// C#特性说明：
@@ -32,6 +33,7 @@ using System.Text.RegularExpressions;
 /// - 匿名类型：创建临时对象
 /// - Guid：生成唯一标识符
 /// - 条件运算符：三元运算符 ?:
+/// - switch表达式：模式匹配
 /// </remarks>
 public class TTSManager : MonoBehaviour, ITTSProvider
 {
@@ -42,6 +44,14 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     [Header("Audio Settings")]
     [Tooltip("Reference to the AudioSource where the speech will be played")]
     public AudioSource audioSource;
+
+    [Header("角色配置")]
+    [Tooltip("角色类型，决定动画控制器和情绪代码范围")]
+    [SerializeField] private CharacterType characterType = CharacterType.Standing;
+
+    [Header("动画控制器（可选，留空则自动查找）")]
+    [Tooltip("自定义动画控制器，留空则根据角色类型自动查找")]
+    [SerializeField] private MonoBehaviour customAnimationController;
 
     [Header("TTS Configuration")]
     [Tooltip("API key for DashScope (Qwen TTS) - loaded from environment variable by default")]
@@ -66,48 +76,38 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     [Tooltip("Reference to the BloodEffectController for blood effects")]
     public bool useBloodEffectController = true;
 
-    // API endpoints
     private static readonly string ttsEndpoint = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
-    // Component references
-    private CharacterAnimationController animationController;
+    private ICharacterAnimation animationController;
     private BloodEffectController bloodEffectController;
     private BloodTextController bloodTextController;
     private Audio2FaceManager audio2FaceManager;
     public EmotionController emotionController;
 
-    // 静态HttpClient实例，用于HTTP请求
     private static readonly HttpClient httpClient = new HttpClient();
 
     void Awake()
     {
-        // 单例模式：确保只有一个TTSManager实例
         if (Instance == null)
         {
             Instance = this;
-            // 如果需要在场景切换时保持此对象，请取消注释以下行
-            // DontDestroyOnLoad(gameObject);
         }
         else
         {
-            // 如果已存在实例，销毁当前对象
             Destroy(gameObject);
         }
     }
 
     void Start()
     {
-        // 如果未手动设置API密钥，则从环境变量加载
         if (string.IsNullOrEmpty(dashScopeApiKey))
         {
             dashScopeApiKey = EnvironmentLoader.GetEnvVariable("DASHSCOPE_API_KEY");
             Debug.Log("TTS Manager: API key loaded from environment variable (DASHSCOPE_API_KEY)");
         }
 
-        // 获取所需组件的引用
-        animationController = GetComponent<CharacterAnimationController>();
+        ResolveAnimationController();
 
-        // 如果使用Audio2Face，查找Audio2FaceManager
         if (useAudio2Face)
         {
             audio2FaceManager = FindObjectOfType<Audio2FaceManager>();
@@ -124,7 +124,6 @@ public class TTSManager : MonoBehaviour, ITTSProvider
 
         if (!useBloodEffectController) return;
 
-        // 在UI中查找血液效果控制器
         bloodEffectController = FindObjectOfType<BloodEffectController>();
         if (bloodEffectController == null)
         {
@@ -145,6 +144,46 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     }
 
     /// <summary>
+    /// 根据角色类型解析动画控制器
+    /// </summary>
+    private void ResolveAnimationController()
+    {
+        if (customAnimationController != null)
+        {
+            animationController = customAnimationController as ICharacterAnimation;
+            if (animationController == null)
+            {
+                Debug.LogError("[TTSManager] Custom animation controller does not implement ICharacterAnimation");
+            }
+            return;
+        }
+        
+        animationController = GetComponent<ICharacterAnimation>();
+        
+        if (animationController == null)
+        {
+            Debug.LogWarning("[TTSManager] No ICharacterAnimation found, trying legacy controllers...");
+            
+            var standingController = GetComponent<CharacterAnimationController>();
+            var sittingController = GetComponent<sitCharacterAnimationController>();
+            
+            if (standingController != null)
+                animationController = standingController as ICharacterAnimation;
+            else if (sittingController != null)
+                animationController = sittingController as ICharacterAnimation;
+        }
+        
+        if (animationController == null)
+        {
+            Debug.LogError("[TTSManager] No valid animation controller found!");
+        }
+        else
+        {
+            Debug.Log($"[TTSManager] Animation controller resolved for {characterType} character");
+        }
+    }
+
+    /// <summary>
     /// 将文本转换为语音的公共方法
     /// </summary>
     /// <param name="text">要转换为语音的文本</param>
@@ -156,27 +195,23 @@ public class TTSManager : MonoBehaviour, ITTSProvider
             return;
         }
 
-        // 去除情绪代码用于TTS，但保留原始文本用于动画
         string ttsText = text;
         Match match = Regex.Match(text.Trim(), @"\[\s*(10|[0-9])\s*\]\s*$");
         if (match.Success)
         {
-            ttsText = text.Substring(0, match.Index).Trim(); // 提取情绪代码之前的文本
+            ttsText = text.Substring(0, match.Index).Trim();
         }
 
-        // 从Qwen TTS服务获取音频数据
         byte[] audioData = await GetQwenTTSAudio(ttsText);
 
         if (audioData != null)
         {
             if (useAudio2Face && audio2FaceManager != null)
             {
-                // 使用Audio2Face处理
                 ProcessWithAudio2Face(audioData, text);
             }
             else
             {
-                // 回退到直接音频播放并处理情绪代码
                 ProcessAudioBytes(audioData, text);
             }
         }
@@ -193,7 +228,6 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     /// <returns>音频字节数组</returns>
     private async Task<byte[]> GetQwenTTSAudio(string inputText)
     {
-        // 匿名类型：创建请求体对象
         var requestBody = new
         {
             model = "qwen3-tts-flash",
@@ -203,15 +237,14 @@ public class TTSManager : MonoBehaviour, ITTSProvider
             {
                 voice = voice,
                 language_type = "Chinese",
-                format = "wav",           // Qwen返回完整的WAV
-                sample_rate = 24000,      // Qwen的默认采样率
-                speed = speed,            // 现有的速度滑块
+                format = "wav",
+                sample_rate = 24000,
+                speed = speed,
                 volume = 1.0f,
                 pitch = 1.0f
             }
         };
 
-        // JSON序列化：将对象转换为JSON字符串
         string jsonContent = JsonConvert.SerializeObject(requestBody);
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
@@ -221,7 +254,6 @@ public class TTSManager : MonoBehaviour, ITTSProvider
 
         try
         {
-            // 异步HTTP POST请求
             HttpResponseMessage response = await httpClient.PostAsync(ttsEndpoint, content);
             string responseBody = await response.Content.ReadAsStringAsync();
 
@@ -231,28 +263,23 @@ public class TTSManager : MonoBehaviour, ITTSProvider
                 return null;
             }
 
-            // 解析JSON响应
             var jsonResponse = JsonConvert.DeserializeObject<QwenTTSResponse>(responseBody);
             
-            // 优先尝试新版API格式 (audio.url)
             if (jsonResponse?.output?.audio?.url != null)
             {
                 string audioUrl = jsonResponse.output.audio.url;
                 Debug.Log($"[TTSManager] Got audio URL from new API format: {audioUrl}");
                 
-                // 如果 data 字段有值，优先使用 Base64 数据
                 if (!string.IsNullOrEmpty(jsonResponse.output.audio.data))
                 {
                     Debug.Log("[TTSManager] Using Base64 data from new API format");
                     return Convert.FromBase64String(jsonResponse.output.audio.data);
                 }
                 
-                // 否则从 URL 下载音频
                 Debug.Log("[TTSManager] Downloading audio from URL...");
                 return await DownloadAudioFromUrl(audioUrl);
             }
             
-            // 兼容旧版API格式 (audio_data)
             if (jsonResponse?.output?.audio_data != null)
             {
                 Debug.Log("[TTSManager] Using Base64 data from old API format");
@@ -304,11 +331,9 @@ public class TTSManager : MonoBehaviour, ITTSProvider
         {
             Debug.Log("Starting Audio2Face processing...");
 
-            // 保存音频副本用于直接播放（我们需要它来触发情绪）
             string filePath = Path.Combine(Application.persistentDataPath, $"{Guid.NewGuid()}.wav");
-            File.WriteAllBytes(filePath, audioData); // Qwen返回完整的WAV
+            File.WriteAllBytes(filePath, audioData);
 
-            // 使用Audio2Face处理音频
             bool success = await audio2FaceManager.ProcessAudioForFacialAnimation(File.ReadAllBytes(filePath), messageContent);
 
             if (success)
@@ -335,11 +360,9 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     /// <param name="messageContent">消息内容</param>
     private void ProcessAudioBytes(byte[] audioData, string messageContent)
     {
-        // 将音频数据保存为本地.wav文件
         string filePath = Path.Combine(Application.persistentDataPath, $"{Guid.NewGuid()}.wav");
-        File.WriteAllBytes(filePath, audioData); // Qwen返回完整的WAV
+        File.WriteAllBytes(filePath, audioData);
 
-        // 启动协程加载并播放音频文件
         StartCoroutine(LoadAndPlayAudio(filePath, messageContent));
     }
 
@@ -350,24 +373,20 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     /// <param name="messageContent">消息内容</param>
     private IEnumerator LoadAndPlayAudio(string filePath, string messageContent)
     {
-        // 创建UnityWebRequest加载音频文件
         using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + filePath, AudioType.WAV);
         yield return www.SendWebRequest();
 
         if (www.result == UnityWebRequest.Result.Success)
         {
-            // 如果文件成功加载，获取音频剪辑并播放
             AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
             audioSource.clip = audioClip;
             audioSource.Play();
 
-            // 如果文件成功加载，播放情绪动画
             if (emotionController != null)
                 emotionController.PlayEmotion();
             else
                 Debug.LogWarning("EmotionController missing during playback!");
 
-            // 根据情绪代码更新动画
             UpdateAnimation(messageContent);
 
             float waitTime = audioClip.length + 0.5f;
@@ -378,14 +397,11 @@ public class TTSManager : MonoBehaviour, ITTSProvider
         }
         else
         {
-            // 如果文件加载失败，记录错误
             Debug.LogError("Audio file loading error: " + www.error);
         }
 
-        // 可选：播放后删除文件
         if (deleteCachedFiles && File.Exists(filePath))
         {
-            // 等待音频播放完成后再删除
             while (audioSource.isPlaying) yield return null;
             try
             {
@@ -414,8 +430,8 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     [Serializable]
     private class Output
     {
-        public string audio_data; // 旧版API: Base64字符串
-        public AudioInfo audio;   // 新版API: 音频信息对象
+        public string audio_data;
+        public AudioInfo audio;
     }
 
     /// <summary>
@@ -424,10 +440,10 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     [Serializable]
     private class AudioInfo
     {
-        public string data;       // Base64数据 (可能为空)
-        public string url;        // 音频URL
-        public string id;         // 音频ID
-        public long expires_at;   // 过期时间戳
+        public string data;
+        public string url;
+        public string id;
+        public long expires_at;
     }
 
     /// <summary>
@@ -438,61 +454,152 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     {
         if (animationController == null)
         {
-            Debug.LogWarning("Cannot update animation: animationController is null");
+            Debug.LogWarning("[TTSManager] Cannot update animation: animationController is null");
             return;
         }
 
-        // 使用正则表达式提取情绪代码
-        Match match = Regex.Match(message, @"\[\s*(10|[0-9])\s*\]\s*$");
+        Match match = Regex.Match(message, @"\[\s*(\d+)\s*\]\s*$");
         if (match.Success)
         {
             int emotionCode = int.Parse(match.Groups[1].Value);
-            switch (emotionCode)
+            
+            int maxCode = GetMaxEmotionCode();
+            if (emotionCode > maxCode)
             {
-                case 0:
-                    animationController.PlayIdle();
-                    break;
-                case 1:
-                    animationController.PlayHeadPain();
-                    Debug.Log("changing to pain");
-                    break;
-                case 2:
-                    animationController.PlayHappy();
-                    break;
-                case 3:
-                    animationController.PlayShrug();
-                    break;
-                case 4:
-                    animationController.PlayHeadNod();
-                    break;
-                case 5:
-                    animationController.PlayHeadShake();
-                    break;
-                case 6:
-                    animationController.PlayWrithingInPain();
-                    break;
-                case 7:
-                    animationController.PlaySad();
-                    break;
-                case 8:
-                    animationController.PlayArmStretch();
-                    break;
-                case 9:
-                    animationController.PlayNeckStretch();
-                    break;
-                case 10:
-                    animationController.PlayBloodPressure();
-                    if (bloodEffectController != null)
-                        bloodEffectController.SetBloodVisibility(true);
-                    if (bloodTextController != null)
-                        bloodTextController.SetBloodTextVisibility(true);
-                    break;
+                Debug.LogWarning($"[TTSManager] Emotion code {emotionCode} out of range for {characterType} (max: {maxCode})");
+                animationController.PlayIdle();
+                return;
+            }
+            
+            if (characterType == CharacterType.Sitting)
+            {
+                PlaySittingAnimation(emotionCode);
+            }
+            else
+            {
+                PlayStandingAnimation(emotionCode);
             }
         }
         else
         {
-            Debug.LogWarning($"No emotion code found: {message}");
+            Debug.LogWarning($"[TTSManager] No emotion code found: {message}");
             animationController.PlayIdle();
         }
+    }
+
+    /// <summary>
+    /// 播放坐姿角色动画
+    /// </summary>
+    /// <param name="emotionCode">情绪代码 (0-4)</param>
+    private void PlaySittingAnimation(int emotionCode)
+    {
+        switch (emotionCode)
+        {
+            case 0: 
+                animationController.PlayAnimation("bend"); 
+                break;
+            case 1: 
+                animationController.PlayAnimation("rub_arm"); 
+                break;
+            case 2: 
+                animationController.PlayAnimation("sad"); 
+                break;
+            case 3: 
+                animationController.PlayAnimation("thumb_up"); 
+                break;
+            case 4:
+                animationController.PlayAnimation("BP");
+                if (bloodEffectController != null)
+                    bloodEffectController.SetBloodVisibility(true);
+                if (bloodTextController != null)
+                    bloodTextController.SetBloodTextVisibility(true);
+                break;
+            default: 
+                animationController.PlayIdle(); 
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 播放站立角色动画
+    /// </summary>
+    /// <param name="emotionCode">情绪代码 (0-10)</param>
+    private void PlayStandingAnimation(int emotionCode)
+    {
+        switch (emotionCode)
+        {
+            case 0: 
+                animationController.PlayIdle(); 
+                break;
+            case 1: 
+                animationController.PlayAnimation("pain"); 
+                Debug.Log("changing to pain");
+                break;
+            case 2: 
+                animationController.PlayAnimation("happy"); 
+                break;
+            case 3: 
+                animationController.PlayAnimation("shrug"); 
+                break;
+            case 4: 
+                animationController.PlayAnimation("head_nod"); 
+                break;
+            case 5: 
+                animationController.PlayAnimation("head_shake"); 
+                break;
+            case 6: 
+                animationController.PlayAnimation("writhing_pain"); 
+                break;
+            case 7: 
+                animationController.PlayAnimation("sad"); 
+                break;
+            case 8: 
+                animationController.PlayAnimation("arm_stretch"); 
+                break;
+            case 9: 
+                animationController.PlayAnimation("neck_stretch"); 
+                break;
+            case 10:
+                animationController.PlayAnimation("blood_pre");
+                if (bloodEffectController != null)
+                    bloodEffectController.SetBloodVisibility(true);
+                if (bloodTextController != null)
+                    bloodTextController.SetBloodTextVisibility(true);
+                break;
+        }
+    }
+
+    /// <summary>
+    /// 获取当前角色类型的最大情绪代码
+    /// </summary>
+    /// <returns>最大情绪代码值</returns>
+    private int GetMaxEmotionCode()
+    {
+        return characterType switch
+        {
+            CharacterType.Standing => 10,
+            CharacterType.Sitting => 4,
+            _ => 10
+        };
+    }
+
+    /// <summary>
+    /// 设置角色类型并重新解析动画控制器
+    /// </summary>
+    /// <param name="type">角色类型</param>
+    public void SetCharacterType(CharacterType type)
+    {
+        characterType = type;
+        ResolveAnimationController();
+        Debug.Log($"[TTSManager] Character type set to {type}, max emotion code: {GetMaxEmotionCode()}");
+    }
+
+    /// <summary>
+    /// 获取当前角色类型
+    /// </summary>
+    /// <returns>当前角色类型</returns>
+    public CharacterType GetCharacterType()
+    {
+        return characterType;
     }
 }
