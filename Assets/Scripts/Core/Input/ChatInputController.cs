@@ -185,30 +185,29 @@ public class ChatInputController : MonoBehaviour
     {
         if (inputField == null || chatUI == null) return;
         
-        RectTransform inputFieldRect = inputField.GetComponent<RectTransform>();
+        // 获取 InputFieldContainer（父对象）而不是直接操作 InputField
+        Transform inputFieldParent = inputField.transform.parent;
+        if (inputFieldParent == null) return;
+        
+        RectTransform inputFieldContainerRect = inputFieldParent.GetComponent<RectTransform>();
         RectTransform chatUIRect = chatUI.GetComponent<RectTransform>();
         
-        if (inputFieldRect == null || chatUIRect == null) return;
+        if (inputFieldContainerRect == null || chatUIRect == null) return;
         
-        // 设置输入框锚点为左下角（与 ChatUI 一致）
-        inputFieldRect.anchorMin = new Vector2(0, 0);
-        inputFieldRect.anchorMax = new Vector2(0, 0);
-        inputFieldRect.pivot = new Vector2(0, 0);
+        // 保持 InputFieldContainer 的锚点为底部拉伸，这样它会相对于 ChatUI 底部定位
+        inputFieldContainerRect.anchorMin = new Vector2(0, 0);
+        inputFieldContainerRect.anchorMax = new Vector2(1, 0);
+        inputFieldContainerRect.pivot = new Vector2(0.5f, 0);
         
-        // 计算输入框位置：在 ChatUI 下方
-        float chatUIOffsetY = chatUIRect.anchoredPosition.y;
+        // 输入框位于 ChatUI 下方，使用 anchoredPosition 相对于父对象
+        float inputFieldY = -inputFieldHeight - inputFieldSpacing;
         
-        // 输入框位于 ChatUI 下方，保持相同的 X 偏移
-        float inputFieldX = chatUIRect.anchoredPosition.x;
-        float inputFieldY = chatUIOffsetY - inputFieldHeight - inputFieldSpacing;
+        inputFieldContainerRect.anchoredPosition = new Vector2(0, inputFieldY);
         
-        inputFieldRect.anchoredPosition = new Vector2(inputFieldX, inputFieldY);
+        // 设置输入框宽度与 ChatUI 一致（因为锚点是拉伸的，所以只需要设置高度）
+        inputFieldContainerRect.sizeDelta = new Vector2(0, inputFieldHeight);
         
-        // 设置输入框宽度与 ChatUI 一致
-        float inputFieldWidth = chatUIRect.sizeDelta.x;
-        inputFieldRect.sizeDelta = new Vector2(inputFieldWidth, inputFieldHeight);
-        
-        Debug.Log($"[ChatInputController] InputField positioned below ChatUI at ({inputFieldX}, {inputFieldY}), size: {inputFieldWidth}x{inputFieldHeight}");
+        Debug.Log($"[ChatInputController] InputField positioned below ChatUI, Y offset: {inputFieldY}, size: {inputFieldContainerRect.sizeDelta}");
     }
     
     /// <summary>
