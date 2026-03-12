@@ -403,6 +403,7 @@ MonoBehaviour:
   bottomLeftOffset: {x: 20, y: 20}
   chatUIWidth: 500
   chatUIHeight: 350
+  scrollToLatestOnOpen: 1
 --- !u!114 &133723870
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -558,6 +559,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioSource: {fileID: 711808820}
+  characterType: 0
+  customAnimationController: {fileID: 0}
   dashScopeApiKey: sk-107e9dfe818e48f4a37476e375ad21a6
   voice: Cherry
   speed: 1
@@ -709,6 +712,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioSource: {fileID: 159334143}
+  characterType: 0
+  customAnimationController: {fileID: 0}
   dashScopeApiKey: 
   voice: longxiaochun
   speed: 1
@@ -2987,21 +2992,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4d868d52bed1a2c42a34e7d3178d98df, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &873283137
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 873283131}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9efe96e2e6e2d0443a857c34cc1f3c4e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  audioSource: {fileID: 1391037499}
-  qwenApiKey: sk-107e9dfe818e48f4a37476e375ad21a6
-  deleteCachedFile: 0
 --- !u!114 &873283138
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3015,18 +3005,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   motionState: 0
---- !u!114 &873283139
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 873283131}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: cc9937d0c085413448fdeabd649f478d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &873283140
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3056,6 +3034,124 @@ MonoBehaviour:
   emotionController: {fileID: 0}
   animController: {fileID: 0}
   bloodEffectController: {fileID: 0}
+--- !u!114 &873283143
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 873283131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce8ecf81683e248b482557efcab54ff2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  audioSource: {fileID: 873283146}
+  characterType: 1
+  customAnimationController: {fileID: 0}
+  dashScopeApiKey: 
+  voice: longxiaochun
+  speed: 1
+  useAudio2Face: 1
+  deleteCachedFiles: 1
+  useBloodEffectController: 1
+  emotionController: {fileID: 0}
+--- !u!82 &873283146
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 873283131}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_PlayOnAwake: 1
+  m_Volume: 1
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 128
+  DopplerLevel: 1
+  MinDistance: 1
+  MaxDistance: 500
+  Pan2D: 0
+  rolloffMode: 0
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
 --- !u!1 &897696203
 GameObject:
   m_ObjectHideFlags: 0
@@ -4397,6 +4493,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioSource: {fileID: 1357197759}
+  characterType: 0
+  customAnimationController: {fileID: 0}
   dashScopeApiKey: 
   voice: longxiaochun
   speed: 1
@@ -5416,16 +5514,16 @@ PrefabInstance:
       addedObject: {fileID: 873283138}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 873283137}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 873283139}
-    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
-      insertIndex: -1
       addedObject: {fileID: 873283140}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 873283142}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 873283143}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 873283146}
     - targetCorrespondingSourceObject: {fileID: 6986090424390163306, guid: f1c0391707e36f147ba6d2708f9ac5f5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 588805914}
