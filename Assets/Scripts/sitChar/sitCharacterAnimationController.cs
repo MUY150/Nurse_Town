@@ -18,7 +18,7 @@ using System.Collections;
 /// - WaitForSeconds：协程等待方法
 /// - 动画触发器：string类型的触发器名称
 /// </remarks>
-public class sitCharacterAnimationController : MonoBehaviour
+public class sitCharacterAnimationController : MonoBehaviour, ICharacterAnimation
 {
     // 私有字段：存储Animator组件
     private Animator animator;
@@ -109,6 +109,15 @@ public class sitCharacterAnimationController : MonoBehaviour
     {
         // 协程：使用延迟播放动画
         StartCoroutine(PlayAnimationWithDelay("BP"));
+    }
+
+    /// <summary>
+    /// ICharacterAnimation 接口实现：播放指定动画
+    /// </summary>
+    /// <param name="triggerName">动画触发器名称</param>
+    public void PlayAnimation(string triggerName)
+    {
+        StartCoroutine(PlayAnimationWithDelay(triggerName));
     }
 
     /// <summary>

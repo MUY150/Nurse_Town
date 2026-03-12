@@ -15,7 +15,7 @@ using System.Collections;
 /// - Animator.SetTrigger()：触发动画触发器
 /// - WaitForSeconds：协程等待方法
 /// </remarks>
-public class CharacterAnimationController : MonoBehaviour
+public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
 {
     private Animator animator;
     [SerializeField] private int motionState = 0;
@@ -130,6 +130,15 @@ public class CharacterAnimationController : MonoBehaviour
     public void PlaySittingTalking()
     {
         StartCoroutine(PlayAnimationWithDelay("sitting_talking"));
+    }
+
+    /// <summary>
+    /// ICharacterAnimation 接口实现：播放指定动画
+    /// </summary>
+    /// <param name="triggerName">动画触发器名称</param>
+    public void PlayAnimation(string triggerName)
+    {
+        StartCoroutine(PlayAnimationWithDelay(triggerName));
     }
 
     /// <summary>
