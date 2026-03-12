@@ -82,29 +82,14 @@ public class PatientDialogueController : MonoBehaviour, ITTSProvider
     
     private void InitializeTTSProvider()
     {
-        if (profile.useAnimatorEmotion)
+        if (TTSManager.Instance != null)
         {
-            if (sitTTSManager.Instance != null)
-            {
-                ttsProvider = sitTTSManager.Instance;
-                Debug.Log("[PatientDialogueController] Using sitTTSManager");
-            }
-            else
-            {
-                Debug.LogWarning("[PatientDialogueController] sitTTSManager.Instance is null");
-            }
+            ttsProvider = TTSManager.Instance;
+            Debug.Log($"[PatientDialogueController] Using TTSManager with CharacterType: {TTSManager.Instance.GetCharacterType()}");
         }
         else
         {
-            if (TTSManager.Instance != null)
-            {
-                ttsProvider = TTSManager.Instance;
-                Debug.Log("[PatientDialogueController] Using TTSManager");
-            }
-            else
-            {
-                Debug.LogWarning("[PatientDialogueController] TTSManager.Instance is null");
-            }
+            Debug.LogWarning("[PatientDialogueController] TTSManager.Instance is null - TTS will not work");
         }
     }
     
