@@ -27,6 +27,7 @@ public class LlmService : Singleton<LlmService>
     {
         RegisterAdapter(new DeepSeekAdapter());
         RegisterAdapter(new OpenAIAdapter());
+        RegisterAdapter(new QwenAdapter());
         
         Debug.Log($"[LlmService] Registered {_adapters.Count} adapters: {string.Join(", ", _adapters.Keys)}");
     }
@@ -174,7 +175,8 @@ public class LlmService : Singleton<LlmService>
             request.Messages, 
             request.Model, 
             config.temperature, 
-            config.maxTokens
+            config.maxTokens,
+            request.Tools
         );
         
         var requestEvent = new LlmRequestEvent
@@ -239,8 +241,44 @@ public class LlmService : Singleton<LlmService>
                 
                 try
                 {
+                    var toolCalls = adapter.ParseToolCalls(responseContent);
                     string content = adapter.ParseResponse(responseContent);
                     var usage = adapter.ParseUsage(responseContent);
+                    
+                    if (toolCalls != null && toolCalls.Count > 0)
+                    {
+                        var toolCallEvent = new LlmToolCallEvent
+                        {
+                            SessionId = request.SessionId,
+                            Timestamp = DateTime.Now,
+                            Provider = request.Provider,
+                            Model = request.Model,
+                            ToolCalls = toolCalls
+                        };
+                        LlmEventBus.Publish(toolCallEvent);
+                        
+                        foreach (var toolCall in toolCalls)
+                        {
+                            var result = ToolRegistry.Instance?.ExecuteTool(toolCall.Name, toolCall.Arguments);
+                            Debug.Log($"[LlmService] Tool '{toolCall.Name}' executed: {result?.Success}");
+                        }
+                        
+                        var toolResponseEvent = new LlmResponseEvent
+                        {
+                            SessionId = request.SessionId,
+                            Timestamp = DateTime.Now,
+                            Provider = request.Provider,
+                            Model = request.Model,
+                            Content = content,
+                            Usage = usage,
+                            Success = true
+                        };
+                        
+                        LlmEventBus.Publish(toolResponseEvent);
+                        request.OnSuccess?.Invoke(content);
+                        OnResponse?.Invoke(toolResponseEvent);
+                        yield break;
+                    }
                     
                     var responseEvent = new LlmResponseEvent
                     {
@@ -255,7 +293,10 @@ public class LlmService : Singleton<LlmService>
                     
                     LlmEventBus.Publish(responseEvent);
                     
-                    request.OnSuccess?.Invoke(content);
+                    if (!string.IsNullOrEmpty(content))
+                    {
+                        request.OnSuccess?.Invoke(content);
+                    }
                     OnResponse?.Invoke(responseEvent);
                 }
                 catch (Exception e)

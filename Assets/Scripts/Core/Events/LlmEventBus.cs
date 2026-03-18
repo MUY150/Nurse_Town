@@ -66,6 +66,11 @@ public static class LlmEventBus
     public static event Action<LlmErrorEvent> OnError;
     public static event Action<SessionStartEvent> OnSessionStart;
     public static event Action<SessionEndEvent> OnSessionEnd;
+    public static event Action<LlmToolCallEvent> OnToolCall;
+    public static event Action<ToolExecutedEvent> OnToolExecuted;
+    public static event Action<SessionCompleteEvent> OnSessionComplete;
+    public static event Action<SpeakExecutedEvent> OnSpeakExecuted;
+    public static event Action<AnimationExecutedEvent> OnAnimationExecuted;
     
     public static void Subscribe<T>(Action<T> handler) where T : ILlmEvent
     {
@@ -119,6 +124,26 @@ public static class LlmEventBus
         {
             OnSessionEnd?.Invoke(endEvent);
         }
+        else if (eventData is LlmToolCallEvent toolCallEvent)
+        {
+            OnToolCall?.Invoke(toolCallEvent);
+        }
+        else if (eventData is ToolExecutedEvent toolExecutedEvent)
+        {
+            OnToolExecuted?.Invoke(toolExecutedEvent);
+        }
+        else if (eventData is SessionCompleteEvent sessionCompleteEvent)
+        {
+            OnSessionComplete?.Invoke(sessionCompleteEvent);
+        }
+        else if (eventData is SpeakExecutedEvent speakExecutedEvent)
+        {
+            OnSpeakExecuted?.Invoke(speakExecutedEvent);
+        }
+        else if (eventData is AnimationExecutedEvent animationExecutedEvent)
+        {
+            OnAnimationExecuted?.Invoke(animationExecutedEvent);
+        }
     }
     
     public static void ClearAllHandlers()
@@ -129,5 +154,10 @@ public static class LlmEventBus
         OnError = null;
         OnSessionStart = null;
         OnSessionEnd = null;
+        OnToolCall = null;
+        OnToolExecuted = null;
+        OnSessionComplete = null;
+        OnSpeakExecuted = null;
+        OnAnimationExecuted = null;
     }
 }
