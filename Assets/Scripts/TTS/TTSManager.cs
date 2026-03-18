@@ -83,6 +83,7 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     private BloodTextController bloodTextController;
     private Audio2FaceManager audio2FaceManager;
     public EmotionController emotionController;
+    private EmotionMappingConfig _emotionConfig;
 
     private static readonly HttpClient httpClient = new HttpClient();
 
@@ -106,6 +107,7 @@ public class TTSManager : MonoBehaviour, ITTSProvider
             Debug.Log("TTS Manager: API key loaded from environment variable (DASHSCOPE_API_KEY)");
         }
 
+        LoadEmotionConfig();
         ResolveAnimationController();
 
         if (useAudio2Face)
@@ -183,11 +185,44 @@ public class TTSManager : MonoBehaviour, ITTSProvider
         }
     }
 
+    private void LoadEmotionConfig()
+    {
+        string path = Path.Combine(Application.streamingAssetsPath, "TTSConfigs", "emotion_mapping.json");
+        if (File.Exists(path))
+        {
+            try
+            {
+                string json = File.ReadAllText(path);
+                _emotionConfig = JsonConvert.DeserializeObject<EmotionMappingConfig>(json);
+                Debug.Log($"[TTSManager] Loaded emotion config with {_emotionConfig.mappings.Count} mappings");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[TTSManager] Failed to load emotion config: {e.Message}");
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"[TTSManager] Emotion config file not found: {path}");
+        }
+    }
+
     /// <summary>
     /// 将文本转换为语音的公共方法
     /// </summary>
     /// <param name="text">要转换为语音的文本</param>
     public async void ConvertTextToSpeech(string text)
+    {
+        ConvertTextToSpeech(text, null, 1.0f);
+    }
+
+    /// <summary>
+    /// 将文本转换为语音的公共方法（带emotion和speechRate参数）
+    /// </summary>
+    /// <param name="text">要转换为语音的文本</param>
+    /// <param name="emotion">情绪类型（可选）</param>
+    /// <param name="speechRate">语速（0.5-2.0）</param>
+    public async void ConvertTextToSpeech(string text, string emotion, float speechRate)
     {
         if (string.IsNullOrEmpty(text))
         {
@@ -202,7 +237,23 @@ public class TTSManager : MonoBehaviour, ITTSProvider
             ttsText = text.Substring(0, match.Index).Trim();
         }
 
-        byte[] audioData = await GetQwenTTSAudio(ttsText);
+        float actualSpeed = (speechRate >= 0.5f && speechRate <= 2.0f) ? speechRate : this.speed;
+        float pitch = 1.0f;
+        
+        if (_emotionConfig != null && !string.IsNullOrEmpty(emotion))
+        {
+            var mapping = _emotionConfig.GetMapping(emotion);
+            if (mapping != null)
+            {
+                actualSpeed = actualSpeed * mapping.speedModifier;
+                pitch = mapping.pitchModifier;
+                Debug.Log($"[TTSManager] Emotion '{emotion}' applied: speed={actualSpeed:F2}, pitch={pitch:F2}");
+            }
+        }
+        
+        Debug.Log($"[TTSManager] TTS request: text='{ttsText.Substring(0, System.Math.Min(30, ttsText.Length))}...', emotion={emotion}, speed={actualSpeed}, pitch={pitch}");
+
+        byte[] audioData = await GetQwenTTSAudio(ttsText, actualSpeed, pitch);
 
         if (audioData != null)
         {
@@ -225,9 +276,13 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     /// 从Qwen获取TTS音频数据
     /// </summary>
     /// <param name="inputText">输入文本</param>
+    /// <param name="speedOverride">语速覆盖（可选）</param>
+    /// <param name="pitch">音调（可选）</param>
     /// <returns>音频字节数组</returns>
-    private async Task<byte[]> GetQwenTTSAudio(string inputText)
+    private async Task<byte[]> GetQwenTTSAudio(string inputText, float? speedOverride = null, float pitch = 1.0f)
     {
+        float useSpeed = speedOverride ?? speed;
+        
         var requestBody = new
         {
             model = "qwen3-tts-flash",
@@ -239,9 +294,9 @@ public class TTSManager : MonoBehaviour, ITTSProvider
                 language_type = "Chinese",
                 format = "wav",
                 sample_rate = 24000,
-                speed = speed,
+                speed = useSpeed,
                 volume = 1.0f,
-                pitch = 1.0f
+                pitch = pitch
             }
         };
 
@@ -463,21 +518,13 @@ public class TTSManager : MonoBehaviour, ITTSProvider
         {
             int emotionCode = int.Parse(match.Groups[1].Value);
             
-            int maxCode = GetMaxEmotionCode();
-            if (emotionCode > maxCode)
+            if (animationController is CharacterAnimationController controller)
             {
-                Debug.LogWarning($"[TTSManager] Emotion code {emotionCode} out of range for {characterType} (max: {maxCode})");
-                animationController.PlayIdle();
-                return;
-            }
-            
-            if (characterType == CharacterType.Sitting)
-            {
-                PlaySittingAnimation(emotionCode);
+                controller.PlayByEmotionCode(emotionCode);
             }
             else
             {
-                PlayStandingAnimation(emotionCode);
+                animationController.PlayAnimation(emotionCode.ToString());
             }
         }
         else
@@ -488,102 +535,6 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     }
 
     /// <summary>
-    /// 播放坐姿角色动画
-    /// </summary>
-    /// <param name="emotionCode">情绪代码 (0-4)</param>
-    private void PlaySittingAnimation(int emotionCode)
-    {
-        switch (emotionCode)
-        {
-            case 0: 
-                animationController.PlayAnimation("bend"); 
-                break;
-            case 1: 
-                animationController.PlayAnimation("rub_arm"); 
-                break;
-            case 2: 
-                animationController.PlayAnimation("sad"); 
-                break;
-            case 3: 
-                animationController.PlayAnimation("thumb_up"); 
-                break;
-            case 4:
-                animationController.PlayAnimation("BP");
-                if (bloodEffectController != null)
-                    bloodEffectController.SetBloodVisibility(true);
-                if (bloodTextController != null)
-                    bloodTextController.SetBloodTextVisibility(true);
-                break;
-            default: 
-                animationController.PlayIdle(); 
-                break;
-        }
-    }
-
-    /// <summary>
-    /// 播放站立角色动画
-    /// </summary>
-    /// <param name="emotionCode">情绪代码 (0-10)</param>
-    private void PlayStandingAnimation(int emotionCode)
-    {
-        switch (emotionCode)
-        {
-            case 0: 
-                animationController.PlayIdle(); 
-                break;
-            case 1: 
-                animationController.PlayAnimation("pain"); 
-                Debug.Log("changing to pain");
-                break;
-            case 2: 
-                animationController.PlayAnimation("happy"); 
-                break;
-            case 3: 
-                animationController.PlayAnimation("shrug"); 
-                break;
-            case 4: 
-                animationController.PlayAnimation("head_nod"); 
-                break;
-            case 5: 
-                animationController.PlayAnimation("head_shake"); 
-                break;
-            case 6: 
-                animationController.PlayAnimation("writhing_pain"); 
-                break;
-            case 7: 
-                animationController.PlayAnimation("sad"); 
-                break;
-            case 8: 
-                animationController.PlayAnimation("arm_stretch"); 
-                break;
-            case 9: 
-                animationController.PlayAnimation("neck_stretch"); 
-                break;
-            case 10:
-                animationController.PlayAnimation("blood_pre");
-                if (bloodEffectController != null)
-                    bloodEffectController.SetBloodVisibility(true);
-                if (bloodTextController != null)
-                    bloodTextController.SetBloodTextVisibility(true);
-                break;
-        }
-    }
-
-    /// <summary>
-    /// 获取当前角色类型的最大情绪代码
-    /// </summary>
-    /// <returns>最大情绪代码值</returns>
-    private int GetMaxEmotionCode()
-    {
-        return characterType switch
-        {
-            CharacterType.Standing => 10,
-            CharacterType.Sitting => 4,
-            _ => 10
-        };
-    }
-
-    /// <summary>
     /// 设置角色类型并重新解析动画控制器
     /// </summary>
     /// <param name="type">角色类型</param>
@@ -591,7 +542,7 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     {
         characterType = type;
         ResolveAnimationController();
-        Debug.Log($"[TTSManager] Character type set to {type}, max emotion code: {GetMaxEmotionCode()}");
+        Debug.Log($"[TTSManager] Character type set to {type}");
     }
 
     /// <summary>

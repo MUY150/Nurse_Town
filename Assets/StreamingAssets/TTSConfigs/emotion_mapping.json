@@ -1,0 +1,100 @@
+{
+  "mappings": [
+    {
+      "emotion": "neutral",
+      "description": "平静 - Normal, calm tone",
+      "speedModifier": 1.0,
+      "pitchModifier": 1.0,
+      "volumeModifier": 1.0,
+      "voiceSuggestion": "longxiaochun",
+      "exampleTexts": [
+        "护士您好，我是约翰逊太太。",
+        "我今年62岁了。"
+      ]
+    },
+    {
+      "emotion": "anxious",
+      "description": "焦虑 - Worried, tense, slightly faster speech",
+      "speedModifier": 1.15,
+      "pitchModifier": 1.1,
+      "volumeModifier": 0.95,
+      "voiceSuggestion": "longxiaochun",
+      "exampleTexts": [
+        "我...我有点担心，这个头疼会不会是严重的病？",
+        "我妈妈有高血压，我哥哥也有心脏病..."
+      ]
+    },
+    {
+      "emotion": "painful",
+      "description": "痛苦 - Suffering, slower speech, lower pitch",
+      "speedModifier": 0.8,
+      "pitchModifier": 0.9,
+      "volumeModifier": 0.85,
+      "voiceSuggestion": "longxiaochun",
+      "exampleTexts": [
+        "啊...头好疼...像有人在敲打一样...",
+        "站起来的时候...头晕得厉害..."
+      ]
+    },
+    {
+      "emotion": "relieved",
+      "description": "宽慰 - Relaxed, comforted, gentle tone",
+      "speedModifier": 0.95,
+      "pitchModifier": 1.0,
+      "volumeModifier": 1.0,
+      "voiceSuggestion": "longxiaochun",
+      "exampleTexts": [
+        "谢谢你，护士。听你这么说我放心多了。",
+        "我会按时吃药的。"
+      ]
+    },
+    {
+      "emotion": "worried",
+      "description": "担忧 - Concerned, uneasy, slightly slower",
+      "speedModifier": 0.9,
+      "pitchModifier": 0.95,
+      "volumeModifier": 0.9,
+      "voiceSuggestion": "longxiaochun",
+      "exampleTexts": [
+        "这个...我有时候会忘记吃药...",
+        "我平时很少运动，这会有影响吗？"
+      ]
+    },
+    {
+      "emotion": "grateful",
+      "description": "感激 - Thankful, warm, positive tone",
+      "speedModifier": 1.0,
+      "pitchModifier": 1.05,
+      "volumeModifier": 1.0,
+      "voiceSuggestion": "longxiaochun",
+      "exampleTexts": [
+        "非常感谢你的耐心解答！",
+        "你让我明白了很多，谢谢！"
+      ]
+    },
+    {
+      "emotion": "frustrated",
+      "description": "沮丧 - Upset, annoyed, for aphasia patients struggling to speak",
+      "speedModifier": 0.85,
+      "pitchModifier": 0.9,
+      "volumeModifier": 0.9,
+      "voiceSuggestion": "zhiyan",
+      "exampleTexts": [
+        "我...我...想...说...",
+        "唉...说...不...出来..."
+      ]
+    },
+    {
+      "emotion": "hopeful",
+      "description": "希望 - Optimistic, looking forward, brighter tone",
+      "speedModifier": 1.05,
+      "pitchModifier": 1.1,
+      "volumeModifier": 1.0,
+      "voiceSuggestion": "longxiaochun",
+      "exampleTexts": [
+        "我...我想...会...好...的...",
+        "希望...能...回...去...工作..."
+      ]
+    }
+  ]
+}
