@@ -111,7 +111,31 @@ public class PatientDialogueController : MonoBehaviour, ITTSProvider
         _llmClient = new LlmClient(LlmScene.Patient, systemPrompt);
         _llmClient.OnMessageReceived += OnLLMResponseReceived;
         
-        Debug.Log($"[PatientDialogueController] LLM Client initialized for scenario: {scenarioName}");
+        var speakTool = new SpeakTool();
+        var actTool = new ActTool();
+        var completeSessionTool = new CompleteSessionTool();
+        
+        _llmClient.RegisterTool(speakTool);
+        _llmClient.RegisterTool(actTool);
+        _llmClient.RegisterTool(completeSessionTool);
+        
+        var charAnimController = GetComponent<CharacterAnimationController>();
+        if (charAnimController != null)
+        {
+            AnimationService.Instance.SetCharacter(charAnimController, scenarioName);
+            
+            var context = new ToolContext
+            {
+                CharacterId = scenarioName,
+                AnimationConfig = AnimationService.Instance.CurrentConfig,
+                AnimationController = charAnimController
+            };
+            ToolRegistry.Instance.CurrentContext = context;
+        }
+        
+        LlmEventBus.Subscribe<SessionCompleteEvent>(HandleSessionComplete);
+        
+        Debug.Log($"[PatientDialogueController] LLM Client initialized with {_llmClient.GetRegisteredTools().Count} tools for scenario: {scenarioName}");
         _llmClient.SendChatMessage("Hello");
     }
     
@@ -175,15 +199,6 @@ public class PatientDialogueController : MonoBehaviour, ITTSProvider
     private void OnLLMResponseReceived(string message)
     {
         currentPatientResponse = message;
-        
-        if (ttsProvider != null)
-        {
-            ttsProvider.ConvertTextToSpeech(message);
-        }
-        else
-        {
-            Debug.LogWarning("[PatientDialogueController] No TTS provider available");
-        }
         
         HandleEmotionCode(message);
     }
@@ -278,5 +293,21 @@ public class PatientDialogueController : MonoBehaviour, ITTSProvider
     public PatientProfile GetProfile()
     {
         return profile;
+    }
+    
+    private void HandleSessionComplete(SessionCompleteEvent args)
+    {
+        Debug.Log($"[PatientDialogueController] Session complete: Correct={args.DiagnosisCorrect}");
+        Debug.Log($"[PatientDialogueController] Summary: {args.Summary}");
+        
+        if (args.KeyObservations != null && args.KeyObservations.Length > 0)
+        {
+            Debug.Log($"[PatientDialogueController] Key observations: {string.Join(", ", args.KeyObservations)}");
+        }
+        
+        if (args.MissedPoints != null && args.MissedPoints.Length > 0)
+        {
+            Debug.Log($"[PatientDialogueController] Missed points: {string.Join(", ", args.MissedPoints)}");
+        }
     }
 }

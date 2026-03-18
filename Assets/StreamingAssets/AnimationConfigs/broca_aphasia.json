@@ -1,0 +1,32 @@
+{
+  "characterType": "sitting",
+  "characterId": "broca_aphasia",
+  "description": "Broca's aphasia patient - Mr. James Harris, 65-year-old male",
+  "maxEmotionCode": 5,
+  "emotionMappings": [
+    { "emotionCode": 0, "triggerName": "idle", "isIdle": true, "triggerBloodEffect": false },
+    { "emotionCode": 1, "triggerName": "frustrated", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 2, "triggerName": "hopeful", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 3, "triggerName": "head_nod", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 4, "triggerName": "head_shake", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 5, "triggerName": "pointing", "isIdle": false, "triggerBloodEffect": false }
+  ],
+  "namedAnimations": {
+    "frustrated": "frustrated",
+    "hopeful": "hopeful",
+    "head_nod": "head_nod",
+    "head_shake": "head_shake",
+    "pointing": "pointing",
+    "thumbs_up": "thumbs_up",
+    "thinking": "thinking"
+  },
+  "animationDescriptions": {
+    "frustrated": "Show frustration with speech difficulties",
+    "hopeful": "Optimistic, looking forward to recovery",
+    "head_nod": "Agree, yes (simple response)",
+    "head_shake": "Disagree, no (simple response)",
+    "pointing": "Point at something to communicate",
+    "thumbs_up": "Good, okay",
+    "thinking": "Trying to find words"
+  }
+}

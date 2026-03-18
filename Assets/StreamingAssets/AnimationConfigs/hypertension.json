@@ -1,0 +1,33 @@
+{
+  "characterType": "standing",
+  "characterId": "hypertension",
+  "description": "Hypertension patient - Mrs. Johnson, 62-year-old female",
+  "maxEmotionCode": 10,
+  "emotionMappings": [
+    { "emotionCode": 0, "triggerName": "idle", "isIdle": true, "triggerBloodEffect": false },
+    { "emotionCode": 1, "triggerName": "pain", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 2, "triggerName": "happy", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 3, "triggerName": "shrug", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 4, "triggerName": "head_nod", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 5, "triggerName": "head_shake", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 10, "triggerName": "blood_pre", "isIdle": false, "triggerBloodEffect": true }
+  ],
+  "namedAnimations": {
+    "pain": "pain",
+    "happy": "happy",
+    "shrug": "shrug",
+    "head_nod": "head_nod",
+    "head_shake": "head_shake",
+    "sad": "sad",
+    "blood_pressure": "blood_pre"
+  },
+  "animationDescriptions": {
+    "pain": "Hold head, show headache pain",
+    "happy": "Smile, relieved expression",
+    "shrug": "Uncertain, don't know",
+    "head_nod": "Agree, yes",
+    "head_shake": "Disagree, no",
+    "sad": "Worried expression",
+    "blood_pressure": "Arm position for blood pressure measurement"
+  }
+}
