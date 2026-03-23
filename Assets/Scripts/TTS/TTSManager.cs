@@ -444,6 +444,9 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
                 yield break;
             }
 
+            // 声明waitTime变量，确保在所有作用域内都可访问
+            float waitTime;
+
             // 检查audioClip.length是否异常 (超过10分钟可能有问题)
             if (audioClip.length > 600)
             {
@@ -456,13 +459,13 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
                 Debug.Log($"[TTSManager] Estimated audio length based on file size: {estimatedLength:F2} seconds");
                 
                 // 使用估算的长度,但不超过60秒
-                float waitTime = Mathf.Min(estimatedLength + 0.5f, 60.0f);
+                waitTime = Mathf.Min(estimatedLength + 0.5f, 60.0f);
                 Debug.LogWarning($"[TTSManager] Using estimated wait time: {waitTime:F2} seconds");
             }
             else
             {
                 // 正常情况,使用audioClip.length
-                float waitTime = audioClip.length + 0.5f;
+                waitTime = audioClip.length + 0.5f;
                 Debug.Log($"[TTSManager] Using audio clip length: {waitTime:F2} seconds");
                 
                 // 额外验证:如果audioClip.length与文件大小不匹配,使用估算值
