@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class PatientDialogueController : Singleton<PatientDialogueController>, ITTSProvider
@@ -9,9 +8,6 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
     [Header("配置")]
     [SerializeField] private string characterId = "hypertensionPatient";
     [SerializeField] private bool loadFromFile = true;
-    
-    [Header("组件引用 - 站立角色")]
-    [SerializeField] private EmotionController emotionController;
     
     [Header("组件引用 - 坐姿角色")]
     [SerializeField] private sitCharacterAnimationController animController;
@@ -79,12 +75,10 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
             return;
         }
         
-        string emotionInstructions = GetEmotionInstructions();
-        
         System.Random rand = new System.Random();
         int patientIndex = rand.Next(patientInstructionsList.Count);
         string selectedPatientInstructions = patientInstructionsList[patientIndex];
-        string systemPrompt = $"{selectedPatientInstructions}\n\n{emotionInstructions}";
+        string systemPrompt = selectedPatientInstructions;
         
         _llmClient = new LlmClient(LlmScene.Patient, systemPrompt);
         _llmClient.OnMessageReceived += OnLLMResponseReceived;
@@ -115,33 +109,6 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
 
         Debug.Log($"[PatientDialogueController] LLM Client initialized with {_llmClient.GetRegisteredTools().Count} tools for scenario: {characterId}");
         _llmClient.SendChatMessage("Hello");
-    }
-    
-    private string GetEmotionInstructions()
-    {
-        if (profile.useAnimatorEmotion)
-        {
-            return @"
-            IMPORTANT: You must end EVERY response with one of these emotion codes:
-            - Use [0] for neutral responses or statements (plays bend animation)
-            - Use [1] for responses showing physical discomfort (plays rub arm animation)
-            - Use [2] for sad or negative emotional responses (plays sad animation)
-            - Use [3] for positive responses or agreement, and appreciation (plays thumbs up animation)
-            - Use [4] for blood pressureing, if the nurse asks to measure your blood pressure (plays arm raise animation)
-            ";
-        }
-        else
-        {
-            return @"
-            IMPORTANT: You must end EVERY response with one of these emotion codes:
-            - Use [0] for neutral responses or statements
-            - Use [1] for responses involving minor pain or discomfort
-            - Use [2] for positive responses, gratitude, or when feeling better
-            - Use [3] for pain
-            - Use [4] for sad
-            - Use [5] for anger or frustration
-            ";
-        }
     }
     
     private void SetupChatUI()
@@ -177,52 +144,6 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
     private void OnLLMResponseReceived(string message)
     {
         currentPatientResponse = message;
-        
-        HandleEmotionCode(message);
-    }
-    
-    private void HandleEmotionCode(string message)
-    {
-        var match = Regex.Match(message, @"\[(\d+)\]");
-        if (!match.Success) return;
-        
-        int emotionCode = int.Parse(match.Groups[1].Value);
-        
-        if (profile.useTimelineEmotion && emotionController != null)
-        {
-            emotionController.HandleEmotionCode(emotionCode);
-            emotionController.PlayEmotion();
-        }
-        else if (profile.useAnimatorEmotion && animController != null)
-        {
-            HandleAnimatorEmotion(emotionCode);
-        }
-    }
-    
-    private void HandleAnimatorEmotion(int emotionCode)
-    {
-        switch (emotionCode)
-        {
-            case 0:
-                animController.PlayBend();
-                break;
-            case 1:
-                animController.PlayRubArm();
-                break;
-            case 2:
-                animController.PlaySad();
-                break;
-            case 3:
-                animController.PlayThumbUp();
-                break;
-            case 4:
-                animController.PlayBloodPressure();
-                bloodEffectController?.SetBloodVisibility(true);
-                break;
-            default:
-                animController.PlayIdle();
-                break;
-        }
     }
     
     public void ReceiveNurseTranscription(string transcribedText)

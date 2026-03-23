@@ -8,7 +8,6 @@ using UnityEngine.Audio;
 using System.Collections;
 using Newtonsoft.Json;
 using System.Text;
-using System.Text.RegularExpressions;
 
 /// <summary>
 /// 文本转语音管理器，负责将文本转换为语音并播放，支持Qwen TTS API和Audio2Face集成
@@ -76,7 +75,6 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
     private BloodEffectController bloodEffectController;
     private BloodTextController bloodTextController;
     private Audio2FaceManager audio2FaceManager;
-    public EmotionController emotionController;
     private EmotionMappingConfig _emotionConfig;
 
     private static readonly HttpClient httpClient = new HttpClient();
@@ -118,12 +116,6 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         if (bloodTextController == null)
         {
             Debug.LogError("BloodTextController not found in the scene. Make sure it exists in the UI!");
-        }
-
-        emotionController = FindObjectOfType<EmotionController>();
-        if (emotionController == null)
-        {
-            Debug.LogWarning("[TTSManager] EmotionController not found in the scene. Emotion animations will be disabled.");
         }
     }
 
@@ -213,11 +205,6 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         }
 
         string ttsText = text;
-        Match match = Regex.Match(text.Trim(), @"\[\s*(10|[0-9])\s*\]\s*$");
-        if (match.Success)
-        {
-            ttsText = text.Substring(0, match.Index).Trim();
-        }
 
         float actualSpeed = (speechRate >= 0.5f && speechRate <= 2.0f) ? speechRate : this.speed;
         float pitch = 1.0f;
@@ -419,11 +406,6 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
             audioSource.clip = audioClip;
             audioSource.Play();
 
-            if (emotionController != null)
-                emotionController.PlayEmotion();
-            else
-                Debug.LogWarning("EmotionController missing during playback!");
-
             UpdateAnimation(messageContent);
 
             float waitTime = audioClip.length + 0.5f;
@@ -495,24 +477,7 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
             return;
         }
 
-        Match match = Regex.Match(message, @"\[\s*(\d+)\s*\]\s*$");
-        if (match.Success)
-        {
-            int emotionCode = int.Parse(match.Groups[1].Value);
-            
-            if (animationController is CharacterAnimationController controller)
-            {
-                controller.PlayByEmotionCode(emotionCode);
-            }
-            else
-            {
-                animationController.PlayAnimation(emotionCode.ToString());
-            }
-        }
-        else
-        {
-            Debug.LogWarning($"[TTSManager] No emotion code found: {message}");
-            animationController.PlayIdle();
-        }
+        // 直接调用idle，动画由Tool控制
+        animationController.PlayIdle();
     }
 }
