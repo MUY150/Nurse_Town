@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEngine;
 
-public class PatientDialogueController : MonoBehaviour, ITTSProvider
+public class PatientDialogueController : Singleton<PatientDialogueController>, ITTSProvider
 {
-    public static PatientDialogueController Instance;
     
     [Header("配置")]
     [SerializeField] private string scenarioName = "brocaAphasia";
@@ -31,30 +30,9 @@ public class PatientDialogueController : MonoBehaviour, ITTSProvider
     
     public bool IsAvailable => ttsProvider != null;
     
-    void Awake()
-    {
-        Debug.Log($"[PatientDialogueController] Awake called on {gameObject.name}");
-        if (Instance == null)
-        {
-            Instance = this;
-            Debug.Log($"[PatientDialogueController] Instance set to {gameObject.name}");
-        }
-        else
-        {
-            Debug.Log($"[PatientDialogueController] Destroying duplicate on {gameObject.name}");
-            Destroy(gameObject);
-        }
-    }
-    
     void Start()
     {
         Debug.Log($"[PatientDialogueController] Start called on {gameObject.name}");
-        
-        if (Instance != this)
-        {
-            Debug.Log($"[PatientDialogueController] Skipping Start on {gameObject.name}");
-            return;
-        }
         
         ApiConfig.Initialize();
         
