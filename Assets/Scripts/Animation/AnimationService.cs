@@ -41,6 +41,21 @@ public class AnimationService : Singleton<AnimationService>
         _currentController.PlayByEmotionCode(emotionCode);
     }
 
+    public void TriggerBloodEffect()
+    {
+        if (_currentController == null)
+        {
+            Debug.LogWarning("[AnimationService] No controller set");
+            return;
+        }
+
+        var charAnimController = _currentController as CharacterAnimationController;
+        if (charAnimController != null)
+        {
+            charAnimController.TriggerBloodEffect();
+        }
+    }
+
     public string[] GetAvailableAnimations()
     {
         if (_currentConfig?.namedAnimations == null)

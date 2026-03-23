@@ -123,7 +123,7 @@ public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
         }
     }
     
-    private void TriggerBloodEffect()
+    public void TriggerBloodEffect()
     {
         if (bloodEffectController != null)
         {
