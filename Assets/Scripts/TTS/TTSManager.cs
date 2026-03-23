@@ -403,16 +403,38 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         if (www.result == UnityWebRequest.Result.Success)
         {
             AudioClip audioClip = DownloadHandlerAudioClip.GetContent(www);
+
+            // 添加audioClip null检查
+            if (audioClip == null)
+            {
+                Debug.LogError("[TTSManager] Audio clip is null after download");
+                yield break;
+            }
+
             audioSource.clip = audioClip;
             audioSource.Play();
 
             UpdateAnimation(messageContent);
 
+            // 计算等待时间并验证合理性
             float waitTime = audioClip.length + 0.5f;
-            Debug.Log($"Audio playing, will wait {waitTime} seconds for completion");
+            Debug.Log($"[TTSManager] Audio clip length: {audioClip.length:F2} seconds, wait time: {waitTime:F2} seconds");
+
+            // 验证waitTime是否在合理范围内
+            if (waitTime <= 0)
+            {
+                Debug.LogWarning($"[TTSManager] Invalid wait time: {waitTime:F2}, using default 1 second");
+                waitTime = 1.0f;
+            }
+            else if (waitTime > 60)
+            {
+                Debug.LogWarning($"[TTSManager] Wait time too long: {waitTime:F2}, capping at 60 seconds");
+                waitTime = 60.0f;
+            }
+
             yield return new WaitForSeconds(waitTime);
 
-            Debug.Log("Audio playback completed");
+            Debug.Log("[TTSManager] Audio playback completed");
         }
         else
         {
