@@ -19,4 +19,10 @@ public interface ICharacterAnimation
     /// </summary>
     /// <param name="state">状态值</param>
     void UpdateAnimationState(int state);
+    
+    /// <summary>
+    /// 根据情绪代码播放动画
+    /// </summary>
+    /// <param name="emotionCode">情绪代码</param>
+    void PlayByEmotionCode(int emotionCode);
 }

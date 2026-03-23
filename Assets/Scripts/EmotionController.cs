@@ -24,7 +24,7 @@ using UnityEngine.Timeline;
 /// - 条件判断：if语句
 /// - 字符串操作：字符串连接和格式化
 /// </remarks>
-public class EmotionController : MonoBehaviour
+public class EmotionController : MonoBehaviour, ICharacterAnimation
 {
     // 公共字段：PlayableDirector组件，用于控制Timeline动画
     public PlayableDirector director;
@@ -111,4 +111,74 @@ public class EmotionController : MonoBehaviour
         // 播放Timeline动画
         director.Play();
     }
+
+    #region ICharacterAnimation Implementation
+
+    /// <summary>
+    /// 根据情绪代码播放动画（ICharacterAnimation接口实现）
+    /// </summary>
+    /// <param name="emotionCode">情绪代码</param>
+    public void PlayByEmotionCode(int emotionCode)
+    {
+        HandleEmotionCode(emotionCode);
+        PlayEmotion();
+    }
+
+    /// <summary>
+    /// 播放指定动画（ICharacterAnimation接口实现）
+    /// 将动画名称映射到情绪代码
+    /// </summary>
+    /// <param name="animationName">动画名称</param>
+    public void PlayAnimation(string animationName)
+    {
+        int code = MapAnimationNameToCode(animationName);
+        PlayByEmotionCode(code);
+    }
+
+    /// <summary>
+    /// 播放空闲动画（ICharacterAnimation接口实现）
+    /// </summary>
+    public void PlayIdle()
+    {
+        PlayByEmotionCode(0);  // 0是Neutral/Idle
+    }
+
+    /// <summary>
+    /// 更新动画状态（ICharacterAnimation接口实现）
+    /// EmotionController不使用状态机，此方法为空实现
+    /// </summary>
+    /// <param name="state">状态值（未使用）</param>
+    public void UpdateAnimationState(int state)
+    {
+        // EmotionController使用Timeline轨道而非Animator状态机
+        // 此方法为接口兼容性保留空实现
+    }
+
+    /// <summary>
+    /// 将动画名称映射到情绪代码
+    /// </summary>
+    /// <param name="animationName">动画名称</param>
+    /// <returns>对应的情绪代码</returns>
+    private int MapAnimationNameToCode(string animationName)
+    {
+        // 根据animationName返回对应的emotion code
+        // 情绪代码映射：
+        // 0: Neutral (bend)
+        // 1: Discomfort (rub_arm)
+        // 2: Happy (thumb_up)
+        // 3: Pain (sad)
+        // 4: Sad (blood_pressure)
+        // 5: Anger
+        return animationName switch
+        {
+            "bend" => 0,
+            "rub_arm" => 1,
+            "thumb_up" => 2,
+            "sad" => 3,
+            "blood_pressure" => 4,
+            _ => 0
+        };
+    }
+
+    #endregion
 }
