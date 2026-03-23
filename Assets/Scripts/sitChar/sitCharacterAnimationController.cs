@@ -12,7 +12,10 @@ public class sitCharacterAnimationController : MonoBehaviour, ICharacterAnimatio
     void Awake()
     {
         _innerController = gameObject.AddComponent<CharacterAnimationController>();
-        _innerController.SetConfig("sitting");
+        
+        // 从AnimationService获取sitting配置
+        var sittingConfig = AnimationService.Instance.CurrentConfig;
+        _innerController.SetConfig(sittingConfig);
         
         var bloodField = typeof(CharacterAnimationController).GetField("bloodEffectController", 
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -22,7 +25,7 @@ public class sitCharacterAnimationController : MonoBehaviour, ICharacterAnimatio
         bloodField?.SetValue(_innerController, bloodEffectController);
         bloodTextField?.SetValue(_innerController, bloodTextController);
         
-        Debug.Log("[sitCharacterAnimationController] Migrated to CharacterAnimationController with sitting config");
+        Debug.Log("[sitCharacterAnimationController] Migrated to CharacterAnimationController with sitting config from AnimationService");
     }
     
     void Start()
