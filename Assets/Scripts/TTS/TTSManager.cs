@@ -35,10 +35,8 @@ using System.Text.RegularExpressions;
 /// - 条件运算符：三元运算符 ?:
 /// - switch表达式：模式匹配
 /// </remarks>
-public class TTSManager : MonoBehaviour, ITTSProvider
+public class TTSManager : Singleton<TTSManager>, ITTSProvider
 {
-    public static TTSManager Instance { get; private set; }
-    
     public bool IsAvailable => audioSource != null;
 
     [Header("Audio Settings")]
@@ -86,18 +84,6 @@ public class TTSManager : MonoBehaviour, ITTSProvider
     private EmotionMappingConfig _emotionConfig;
 
     private static readonly HttpClient httpClient = new HttpClient();
-
-    void Awake()
-    {
-        if (Instance == null)
-        {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
-    }
 
     void Start()
     {
