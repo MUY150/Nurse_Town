@@ -7,7 +7,7 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
 {
     
     [Header("配置")]
-    [SerializeField] private string scenarioName = "brocaAphasia";
+    [SerializeField] private string characterId = "hypertensionPatient";
     [SerializeField] private bool loadFromFile = true;
     
     [Header("组件引用 - 站立角色")]
@@ -47,13 +47,13 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
     {
         if (loadFromFile)
         {
-            profile = PatientConfigLoader.LoadFromFile(scenarioName);
+            profile = PatientConfigLoader.LoadFromFile(characterId);
         }
         else
         {
             profile = PatientConfigLoader.LoadDefault();
         }
-        
+
         patientInstructionsList = profile.patientInstructionsList;
         Debug.Log($"[PatientDialogueController] Loaded profile for scenario: {profile.scenarioName}");
     }
@@ -63,7 +63,7 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
         if (TTSManager.Instance != null)
         {
             ttsProvider = TTSManager.Instance;
-            Debug.Log($"[PatientDialogueController] Using TTSManager with CharacterType: {TTSManager.Instance.GetCharacterType()}");
+            Debug.Log($"[PatientDialogueController] Using TTSManager with CharacterId: {characterId}");
         }
         else
         {
@@ -100,20 +100,20 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
         var charAnimController = GetComponent<CharacterAnimationController>();
         if (charAnimController != null)
         {
-            AnimationService.Instance.SetCharacter(charAnimController, scenarioName);
-            
+            AnimationService.Instance.SetCharacter(charAnimController, characterId);
+
             var context = new ToolContext
             {
-                CharacterId = scenarioName,
+                CharacterId = characterId,
                 AnimationConfig = AnimationService.Instance.CurrentConfig,
                 AnimationController = charAnimController
             };
             ToolRegistry.Instance.CurrentContext = context;
         }
-        
+
         LlmEventBus.Subscribe<SessionCompleteEvent>(HandleSessionComplete);
-        
-        Debug.Log($"[PatientDialogueController] LLM Client initialized with {_llmClient.GetRegisteredTools().Count} tools for scenario: {scenarioName}");
+
+        Debug.Log($"[PatientDialogueController] LLM Client initialized with {_llmClient.GetRegisteredTools().Count} tools for scenario: {characterId}");
         _llmClient.SendChatMessage("Hello");
     }
     
@@ -167,10 +167,10 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
             scoringSystem = new ScoringSystem();
         }
         scoringSystem.Initialize(this);
-        
+
         if (ScoreManager.Instance != null)
         {
-            ScoreManager.Instance.Initialize(scenarioName);
+            ScoreManager.Instance.Initialize(characterId);
         }
     }
     

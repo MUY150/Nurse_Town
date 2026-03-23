@@ -1,155 +1,180 @@
 using UnityEngine;
 using System.Collections;
 
-/// <summary>
-/// 角色动画控制器，负责管理角色的各种动画状态和触发器
-/// </summary>
-/// <remarks>
-/// C#特性说明：
-/// - MonoBehaviour：Unity脚本基类
-/// - [SerializeField]序列化特性：让私有字段在Inspector中可编辑
-/// - 协程（Coroutine）：使用IEnumerator和yield return实现延迟动画
-/// - Unity生命周期方法：Start()
-/// - Unity动画系统：Animator组件
-/// - Animator.SetInteger()：设置整数动画参数
-/// - Animator.SetTrigger()：触发动画触发器
-/// - WaitForSeconds：协程等待方法
-/// </remarks>
 public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
 {
+    [Header("配置")]
+    [SerializeField] private string characterId = "hypertensionPatient";
+    [SerializeField] private bool loadFromFile = true;
+    
+    [Header("血液效果（可选）")]
+    [SerializeField] private BloodEffectController bloodEffectController;
+    [SerializeField] private BloodTextController bloodTextController;
+    
     private Animator animator;
-    [SerializeField] private int motionState = 0;
+    private AnimationConfig config;
+    private int motionState = 0;
+    
+    public AnimationConfig Config => config;
     
     void Start()
     {
         animator = GetComponent<Animator>();
+        LoadConfig();
         UpdateAnimationState(motionState);
     }
+    
+    private void LoadConfig()
+    {
+        if (loadFromFile)
+        {
+            config = AnimationConfigLoader.LoadFromFile(characterId);
+        }
+        else
+        {
+            config = AnimationConfigLoader.LoadFromFile(characterId);
+        }
 
-    /// <summary>
-    /// 更新动画状态
-    /// </summary>
-    /// <param name="newState">新的动画状态</param>
+        Debug.Log($"[CharacterAnimationController] Loaded config: {config.characterType}, maxEmotionCode: {config.maxEmotionCode}");
+    }
+
+    public void SetConfig(string newCharacterId)
+    {
+        characterId = newCharacterId;
+        LoadConfig();
+    }
+    
     public void UpdateAnimationState(int newState)
     {
         motionState = newState;
         animator.SetInteger("Motion", motionState);
     }
-
-    /// <summary>
-    /// 播放待机动画
-    /// </summary>
+    
     public void PlayIdle()
     {
         UpdateAnimationState(0);
     }
-
-    /// <summary>
-    /// 播放头痛动画
-    /// </summary>
-    public void PlayHeadPain()
-    {
-        StartCoroutine(PlayAnimationWithDelay("pain"));
-    }
-
-    /// <summary>
-    /// 播放开心动画
-    /// </summary>
-    public void PlayHappy()
-    {
-        StartCoroutine(PlayAnimationWithDelay("happy"));
-    }
-
-    /// <summary>
-    /// 播放耸肩动画
-    /// </summary>
-    public void PlayShrug()
-    {
-        StartCoroutine(PlayAnimationWithDelay("shrug"));
-    }
-
-    /// <summary>
-    /// 播放点头动画
-    /// </summary>
-    public void PlayHeadNod()
-    {
-        StartCoroutine(PlayAnimationWithDelay("head_nod"));
-    }
-
-    /// <summary>
-    /// 播放摇头动画
-    /// </summary>
-    public void PlayHeadShake()
-    {
-        StartCoroutine(PlayAnimationWithDelay("head_shake"));
-    }
-
-    /// <summary>
-    /// 播放痛苦扭动动画
-    /// </summary>
-    public void PlayWrithingInPain()
-    {
-        StartCoroutine(PlayAnimationWithDelay("writhing_pain"));
-    }
-
-    /// <summary>
-    /// 播放悲伤动画
-    /// </summary>
-    public void PlaySad()
-    {
-        StartCoroutine(PlayAnimationWithDelay("sad"));
-    }
-
-    /// <summary>
-    /// 播放手臂伸展动画
-    /// </summary>
-    public void PlayArmStretch()
-    {
-        StartCoroutine(PlayAnimationWithDelay("arm_stretch"));
-    }
-
-    /// <summary>
-    /// 播放颈部伸展动画
-    /// </summary>
-    public void PlayNeckStretch()
-    {
-        StartCoroutine(PlayAnimationWithDelay("neck_stretch"));
-    }
-
-    /// <summary>
-    /// 播放血压测量动画
-    /// </summary>
-    public void PlayBloodPressure()
-    {
-        StartCoroutine(PlayAnimationWithDelay("blood_pre"));
-    }
-
-    /// <summary>
-    /// 播放坐着说话动画
-    /// </summary>
-    public void PlaySittingTalking()
-    {
-        StartCoroutine(PlayAnimationWithDelay("sitting_talking"));
-    }
-
-    /// <summary>
-    /// ICharacterAnimation 接口实现：播放指定动画
-    /// </summary>
-    /// <param name="triggerName">动画触发器名称</param>
+    
     public void PlayAnimation(string triggerName)
     {
         StartCoroutine(PlayAnimationWithDelay(triggerName));
     }
-
-    /// <summary>
-    /// 带延迟播放动画的协程
-    /// </summary>
-    /// <param name="triggerName">动画触发器名称</param>
-    /// <param name="delay">延迟时间（秒）</param>
+    
+    public void PlayByEmotionCode(int emotionCode)
+    {
+        if (config == null)
+        {
+            Debug.LogWarning("[CharacterAnimationController] Config not loaded");
+            PlayIdle();
+            return;
+        }
+        
+        if (emotionCode > config.maxEmotionCode)
+        {
+            Debug.LogWarning($"[CharacterAnimationController] Emotion code {emotionCode} out of range (max: {config.maxEmotionCode})");
+            PlayIdle();
+            return;
+        }
+        
+        var mapping = config.GetMappingByEmotionCode(emotionCode);
+        if (mapping == null)
+        {
+            PlayIdle();
+            return;
+        }
+        
+        if (mapping.isIdle)
+        {
+            PlayIdle();
+        }
+        else
+        {
+            PlayAnimation(mapping.triggerName);
+        }
+        
+        if (mapping.triggerBloodEffect)
+        {
+            TriggerBloodEffect();
+        }
+    }
+    
+    public void PlayByName(string animationName)
+    {
+        if (config == null)
+        {
+            Debug.LogWarning("[CharacterAnimationController] Config not loaded");
+            return;
+        }
+        
+        var triggerName = config.GetTriggerByName(animationName);
+        if (!string.IsNullOrEmpty(triggerName))
+        {
+            PlayAnimation(triggerName);
+            
+            var mapping = config.GetMappingByTriggerName(triggerName);
+            if (mapping != null && mapping.triggerBloodEffect)
+            {
+                TriggerBloodEffect();
+            }
+        }
+        else
+        {
+            Debug.LogWarning($"[CharacterAnimationController] Animation '{animationName}' not found in config");
+        }
+    }
+    
+    private void TriggerBloodEffect()
+    {
+        if (bloodEffectController != null)
+        {
+            bloodEffectController.SetBloodVisibility(true);
+        }
+        if (bloodTextController != null)
+        {
+            bloodTextController.SetBloodTextVisibility(true);
+        }
+    }
+    
     private IEnumerator PlayAnimationWithDelay(string triggerName, float delay = 0.0f)
     {
         yield return new WaitForSeconds(delay);
         animator.SetTrigger(triggerName);
     }
-
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayHeadPain() => PlayAnimation("pain");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayHappy() => PlayAnimation("happy");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayShrug() => PlayAnimation("shrug");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayHeadNod() => PlayAnimation("head_nod");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayHeadShake() => PlayAnimation("head_shake");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayWrithingInPain() => PlayAnimation("writhing_pain");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlaySad() => PlayAnimation("sad");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayArmStretch() => PlayAnimation("arm_stretch");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayNeckStretch() => PlayAnimation("neck_stretch");
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlayBloodPressure()
+    {
+        PlayAnimation("blood_pre");
+        TriggerBloodEffect();
+    }
+    
+    [System.Obsolete("Use PlayByEmotionCode instead")]
+    public void PlaySittingTalking() => PlayAnimation("sitting_talking");
 }

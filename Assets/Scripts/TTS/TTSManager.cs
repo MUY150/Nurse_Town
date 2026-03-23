@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 /// <summary>
 /// 文本转语音管理器，负责将文本转换为语音并播放，支持Qwen TTS API和Audio2Face集成
-/// 支持站立和坐姿角色类型，通过CharacterType配置
+/// 通过角色ID配置不同的动画控制器和情绪代码范围
 /// </summary>
 /// <remarks>
 /// C#特性说明：
@@ -42,10 +42,6 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
     [Header("Audio Settings")]
     [Tooltip("Reference to the AudioSource where the speech will be played")]
     public AudioSource audioSource;
-
-    [Header("角色配置")]
-    [Tooltip("角色类型，决定动画控制器和情绪代码范围")]
-    [SerializeField] private CharacterType characterType = CharacterType.Standing;
 
     [Header("动画控制器（可选，留空则自动查找）")]
     [Tooltip("自定义动画控制器，留空则根据角色类型自动查找")]
@@ -132,7 +128,7 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
     }
 
     /// <summary>
-    /// 根据角色类型解析动画控制器
+    /// 解析动画控制器
     /// </summary>
     private void ResolveAnimationController()
     {
@@ -167,7 +163,7 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         }
         else
         {
-            Debug.Log($"[TTSManager] Animation controller resolved for {characterType} character");
+            Debug.Log($"[TTSManager] Animation controller resolved successfully");
         }
     }
 
@@ -518,25 +514,5 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
             Debug.LogWarning($"[TTSManager] No emotion code found: {message}");
             animationController.PlayIdle();
         }
-    }
-
-    /// <summary>
-    /// 设置角色类型并重新解析动画控制器
-    /// </summary>
-    /// <param name="type">角色类型</param>
-    public void SetCharacterType(CharacterType type)
-    {
-        characterType = type;
-        ResolveAnimationController();
-        Debug.Log($"[TTSManager] Character type set to {type}");
-    }
-
-    /// <summary>
-    /// 获取当前角色类型
-    /// </summary>
-    /// <returns>当前角色类型</returns>
-    public CharacterType GetCharacterType()
-    {
-        return characterType;
     }
 }

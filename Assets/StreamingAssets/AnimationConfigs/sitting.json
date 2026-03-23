@@ -1,0 +1,18 @@
+{
+  "characterType": "sitting",
+  "maxEmotionCode": 4,
+  "emotionMappings": [
+    { "emotionCode": 0, "triggerName": "bend", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 1, "triggerName": "rub_arm", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 2, "triggerName": "sad", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 3, "triggerName": "thumb_up", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 4, "triggerName": "BP", "isIdle": false, "triggerBloodEffect": true }
+  ],
+  "namedAnimations": {
+    "bend": "bend",
+    "rub_arm": "rub_arm",
+    "sad": "sad",
+    "thumb_up": "thumb_up",
+    "blood_pressure": "BP"
+  }
+}
