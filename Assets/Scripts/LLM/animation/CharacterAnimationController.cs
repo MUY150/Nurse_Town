@@ -3,10 +3,6 @@ using System.Collections;
 
 public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
 {
-    [Header("配置")]
-    [SerializeField] private string characterId = "hypertensionPatient";
-    [SerializeField] private bool loadFromFile = true;
-    
     [Header("血液效果（可选）")]
     [SerializeField] private BloodEffectController bloodEffectController;
     [SerializeField] private BloodTextController bloodTextController;
@@ -20,34 +16,28 @@ public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
     void Start()
     {
         animator = GetComponent<Animator>();
-        LoadConfig();
         UpdateAnimationState(motionState);
     }
     
-    private void LoadConfig()
+    public void SetConfig(AnimationConfig newConfig)
     {
-        if (loadFromFile)
-        {
-            config = AnimationConfigLoader.LoadFromFile(characterId);
-        }
-        else
-        {
-            config = AnimationConfigLoader.LoadFromFile(characterId);
-        }
-
-        Debug.Log($"[CharacterAnimationController] Loaded config: {config.characterType}, maxEmotionCode: {config.maxEmotionCode}");
-    }
-
-    public void SetConfig(string newCharacterId)
-    {
-        characterId = newCharacterId;
-        LoadConfig();
+        config = newConfig;
+        Debug.Log($"[CharacterAnimationController] Config set: {config?.characterType}, maxEmotionCode: {config?.maxEmotionCode}");
     }
     
     public void UpdateAnimationState(int newState)
     {
         motionState = newState;
-        animator.SetInteger("Motion", motionState);
+        
+        // 验证Animator参数是否存在
+        if (animator != null && animator.HasParameterOfType("Motion", AnimatorControllerParameterType.Int))
+        {
+            animator.SetInteger("Motion", motionState);
+        }
+        else
+        {
+            Debug.LogWarning("[CharacterAnimationController] Animator parameter 'Motion' (Int) not found");
+        }
     }
     
     public void PlayIdle()
@@ -138,7 +128,16 @@ public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
     private IEnumerator PlayAnimationWithDelay(string triggerName, float delay = 0.0f)
     {
         yield return new WaitForSeconds(delay);
-        animator.SetTrigger(triggerName);
+        
+        // 验证Animator参数是否存在
+        if (animator != null && animator.HasParameterOfType(triggerName, AnimatorControllerParameterType.Trigger))
+        {
+            animator.SetTrigger(triggerName);
+        }
+        else
+        {
+            Debug.LogWarning($"[CharacterAnimationController] Animator trigger '{triggerName}' not found");
+        }
     }
     
     [System.Obsolete("Use PlayByEmotionCode instead")]
@@ -177,4 +176,27 @@ public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
     
     [System.Obsolete("Use PlayByEmotionCode instead")]
     public void PlaySittingTalking() => PlayAnimation("sitting_talking");
+}
+
+/// <summary>
+/// Animator扩展方法,用于检查参数是否存在
+/// </summary>
+public static class AnimatorExtensions
+{
+    public static bool HasParameterOfType(this Animator animator, string paramName, AnimatorControllerParameterType type)
+    {
+        if (animator == null || animator.parameters == null)
+        {
+            return false;
+        }
+        
+        foreach (var param in animator.parameters)
+        {
+            if (param.name == paramName && param.type == type)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 }

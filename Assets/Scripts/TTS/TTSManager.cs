@@ -397,6 +397,24 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
     /// <param name="messageContent">消息内容</param>
     private IEnumerator LoadAndPlayAudio(string filePath, string messageContent)
     {
+        // 验证音频文件是否存在
+        if (!File.Exists(filePath))
+        {
+            Debug.LogError($"[TTSManager] Audio file not found: {filePath}");
+            yield break;
+        }
+
+        // 获取音频文件大小
+        long fileSize = new FileInfo(filePath).Length;
+        Debug.Log($"[TTSManager] Audio file size: {fileSize} bytes ({fileSize / 1024.0:F2} KB)");
+
+        // 验证文件大小是否合理 (至少100字节)
+        if (fileSize < 100)
+        {
+            Debug.LogError($"[TTSManager] Audio file too small: {fileSize} bytes, possibly corrupted");
+            yield break;
+        }
+
         using UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + filePath, AudioType.WAV);
         yield return www.SendWebRequest();
 
@@ -411,26 +429,59 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
                 yield break;
             }
 
+            // 记录audioClip详细信息
+            Debug.Log($"[TTSManager] Audio clip details - " +
+                      $"length: {audioClip.length:F2} seconds, " +
+                      $"samples: {audioClip.samples}, " +
+                      $"channels: {audioClip.channels}, " +
+                      $"frequency: {audioClip.frequency} Hz, " +
+                      $"loadState: {audioClip.loadState}");
+
+            // 验证audioClip.length是否合理
+            if (audioClip.length <= 0)
+            {
+                Debug.LogError($"[TTSManager] Invalid audio clip length: {audioClip.length:F2} seconds");
+                yield break;
+            }
+
+            // 检查audioClip.length是否异常 (超过10分钟可能有问题)
+            if (audioClip.length > 600)
+            {
+                Debug.LogWarning($"[TTSManager] Audio clip length seems too long: {audioClip.length:F2} seconds, " +
+                                 $"this might indicate a corrupted audio file. File size: {fileSize} bytes");
+                
+                // 根据文件大小估算合理的音频长度
+                // 假设24kHz采样率,16位,单声道: 1秒 ≈ 48000字节
+                float estimatedLength = fileSize / 48000.0f;
+                Debug.Log($"[TTSManager] Estimated audio length based on file size: {estimatedLength:F2} seconds");
+                
+                // 使用估算的长度,但不超过60秒
+                float waitTime = Mathf.Min(estimatedLength + 0.5f, 60.0f);
+                Debug.LogWarning($"[TTSManager] Using estimated wait time: {waitTime:F2} seconds");
+            }
+            else
+            {
+                // 正常情况,使用audioClip.length
+                float waitTime = audioClip.length + 0.5f;
+                Debug.Log($"[TTSManager] Using audio clip length: {waitTime:F2} seconds");
+                
+                // 额外验证:如果audioClip.length与文件大小不匹配,使用估算值
+                float expectedLength = fileSize / 48000.0f;
+                if (Mathf.Abs(audioClip.length - expectedLength) > expectedLength * 0.5f)
+                {
+                    Debug.LogWarning($"[TTSManager] Audio clip length ({audioClip.length:F2}s) differs significantly " +
+                                   $"from expected ({expectedLength:F2}s). Using estimated length.");
+                    waitTime = expectedLength + 0.5f;
+                }
+                
+                // 确保waitTime在合理范围内
+                waitTime = Mathf.Clamp(waitTime, 1.0f, 60.0f);
+            }
+
             audioSource.clip = audioClip;
             audioSource.Play();
 
             UpdateAnimation(messageContent);
-
-            // 计算等待时间并验证合理性
-            float waitTime = audioClip.length + 0.5f;
-            Debug.Log($"[TTSManager] Audio clip length: {audioClip.length:F2} seconds, wait time: {waitTime:F2} seconds");
-
-            // 验证waitTime是否在合理范围内
-            if (waitTime <= 0)
-            {
-                Debug.LogWarning($"[TTSManager] Invalid wait time: {waitTime:F2}, using default 1 second");
-                waitTime = 1.0f;
-            }
-            else if (waitTime > 60)
-            {
-                Debug.LogWarning($"[TTSManager] Wait time too long: {waitTime:F2}, capping at 60 seconds");
-                waitTime = 60.0f;
-            }
 
             yield return new WaitForSeconds(waitTime);
 
@@ -438,7 +489,7 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         }
         else
         {
-            Debug.LogError("Audio file loading error: " + www.error);
+            Debug.LogError($"[TTSManager] Audio file loading error: {www.error}, Response code: {www.responseCode}");
         }
 
         if (deleteCachedFiles && File.Exists(filePath))
@@ -447,11 +498,11 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
             try
             {
                 File.Delete(filePath);
-                Debug.Log("Deleted cached audio file");
+                Debug.Log("[TTSManager] Deleted cached audio file");
             }
             catch (Exception ex)
             {
-                Debug.LogWarning($"Failed to delete cached audio file: {ex.Message}");
+                Debug.LogWarning($"[TTSManager] Failed to delete cached audio file: {ex.Message}");
             }
         }
     }
