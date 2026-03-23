@@ -64,21 +64,13 @@ public class NvidiaErrorResponse
 /// </summary>
 /// <remarks>
 /// C#特性说明:
+/// - Singleton<T>: 继承单例基类，提供全局唯一实例访问
 /// - MonoBehaviour: Unity所有脚本的基础类，提供生命周期方法
-/// - 单例模式: 使用静态Instance属性确保全局唯一实例
 /// - async/await: C#异步编程关键字，用于非阻塞的API调用
 /// - 协程(Coroutine): Unity特有的异步执行机制
 /// </remarks>
-public class Audio2FaceManager : MonoBehaviour
+public class Audio2FaceManager : Singleton<Audio2FaceManager>
 {
-    // ============================================================================
-    // C#特性说明: 属性(Property)
-    // ============================================================================
-    // C#的属性是特殊的成员，提供了get和set访问器
-    // 类似C++的getter/setter，但语法更简洁
-    // { get; private set; } 表示只能从外部读取，内部可以修改
-    // ============================================================================
-    public static Audio2FaceManager Instance { get; private set; }
     
     // ============================================================================
     // Unity特性说明: [Header] 和 [Tooltip]
@@ -186,32 +178,13 @@ public class Audio2FaceManager : MonoBehaviour
             Directory.CreateDirectory(tempDirectory);
             UnityEngine.Debug.Log($"Created temporary directory: {tempDirectory}");
         }
-        
-        // ============================================================================
-        // C#设计模式: 单例模式(Singleton)
-        // ============================================================================
-        // 单例模式确保类只有一个实例存在
-        // 在Unity中常用于管理器和全局访问
-        // Instance是静态属性，可以从任何地方访问
-        // ============================================================================
-        
-        if (Instance == null)
-        {
-            Instance = this;  // this是C#的关键字，引用当前实例
-        }
-        else
-        {
-            // Destroy是Unity的方法，销毁游戏对象
-            Destroy(gameObject);
-            return;
-        }
-        
+
         // Load API key from environment if not set
         if (string.IsNullOrEmpty(apiKey))
         {
             // First try to get it from the EnvironmentLoader
             apiKey = EnvironmentLoader.GetEnvVariable("NVIDIA_API_KEY");
-            
+
             // If that didn't work, try System.Environment directly
             if (string.IsNullOrEmpty(apiKey))
             {
@@ -224,17 +197,10 @@ public class Audio2FaceManager : MonoBehaviour
                     UnityEngine.Debug.LogWarning($"Error accessing environment variable: {ex.Message}");
                 }
             }
-            
-            // If still empty, try the hardcoded value from your .env file
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                apiKey = "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";
-                UnityEngine.Debug.Log("Using hardcoded API key as fallback");
-            }
-            
+
             // C#字符串插值示例
             UnityEngine.Debug.Log($"API Key is {(string.IsNullOrEmpty(apiKey) ? "empty" : $"{apiKey.Length} characters long")}");
-            
+
             if (string.IsNullOrEmpty(apiKey))
             {
                 UnityEngine.Debug.LogWarning("No NVIDIA API key found. Please set it in the inspector or as an environment variable.");
@@ -464,21 +430,13 @@ public class Audio2FaceManager : MonoBehaviour
             UnityEngine.Debug.LogError("Cannot process audio: Audio data is null or empty!");
             return false;
         }
-        
-        // Double-check API key availability
-        if (string.IsNullOrEmpty(apiKey))
-        {
-            // Try one more time to load the API key as a fallback
-            apiKey = "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";
-            UnityEngine.Debug.Log("Using hardcoded API key in ProcessAudioForFacialAnimation");
-        }
-        
+
         if (string.IsNullOrEmpty(apiKey) && !useDummyData)
         {
             UnityEngine.Debug.LogError("Cannot process audio: No NVIDIA API key provided!");
             return false;
         }
-        
+
         UnityEngine.Debug.Log($"Using API key (first 10 chars): {apiKey.Substring(0, Math.Min(10, apiKey.Length))}...");
         
         // Make sure temp directory exists
