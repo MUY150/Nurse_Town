@@ -7,7 +7,30 @@ using UnityEngine;
 public static class AnimationConfigLoader
 {
     private static Dictionary<string, AnimationConfig> _cache = new Dictionary<string, AnimationConfig>();
-    
+
+    public static bool ValidateConfig(AnimationConfig config)
+    {
+        if (config == null)
+        {
+            Debug.LogError("[AnimationConfigLoader] Config is null");
+            return false;
+        }
+
+        if (config.emotionMappings == null || config.emotionMappings.Count == 0)
+        {
+            Debug.LogError("[AnimationConfigLoader] No emotion mappings found");
+            return false;
+        }
+
+        if (config.namedAnimations == null || config.namedAnimations.Count == 0)
+        {
+            Debug.LogError("[AnimationConfigLoader] No named animations found");
+            return false;
+        }
+
+        return true;
+    }
+
     public static AnimationConfig LoadFromFile(string characterId)
     {
         string cacheKey = characterId.ToLower();
@@ -30,8 +53,15 @@ public static class AnimationConfigLoader
             string json = File.ReadAllText(path);
             var config = JsonConvert.DeserializeObject<AnimationConfig>(json);
 
+            // 验证配置
+            if (!ValidateConfig(config))
+            {
+                Debug.LogError($"[AnimationConfigLoader] Invalid config: {characterId}");
+                return null;
+            }
+
             _cache[cacheKey] = config;
-            Debug.Log($"[AnimationConfigLoader] Loaded config: {characterId}");
+            Debug.Log($"[AnimationConfigLoader] Loaded and validated config: {characterId}");
 
             return config;
         }
