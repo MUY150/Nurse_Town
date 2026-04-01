@@ -158,9 +158,9 @@ public class VoiceInputController : MonoBehaviour
     /// </summary>
     void SendToDialogueSystem(string transcription)
     {
-        if (sitPatientSpeech.Instance != null)
+        if (NurseTown.Core.Dialogue.DialogueCoordinator.Instance != null)
         {
-            sitPatientSpeech.Instance.ReceiveNurseTranscription(transcription);
+            NurseTown.Core.Dialogue.DialogueCoordinator.Instance.ReceiveTranscription(transcription);
         }
         else
         {
