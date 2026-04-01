@@ -1,13 +1,15 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using NurseTown.Core.Interfaces;
 
-public class PatientDialogueController : Singleton<PatientDialogueController>, ITTSProvider
+public class PatientDialogueController : Singleton<PatientDialogueController>, ITTSProvider, IConversationTarget
 {
     
     [Header("配置")]
     [SerializeField] private string characterId = "hypertensionPatient";
     [SerializeField] private bool loadFromFile = true;
+    [SerializeField] private string posture = "sitting";
     
     [Header("组件引用 - 坐姿角色")]
     [SerializeField] private sitCharacterAnimationController animController;
@@ -91,18 +93,57 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
         _llmClient.RegisterTool(actTool);
         _llmClient.RegisterTool(completeSessionTool);
         
-        var charAnimController = GetComponent<CharacterAnimationController>();
-        if (charAnimController != null)
+        // 使用新的配置名格式: patient_{characterId}_{posture}
+        string configName = $"patient_{characterId}_{posture}";
+        
+        if (animController != null)
         {
-            AnimationService.Instance.SetCharacter(charAnimController, characterId);
-
+            animController.InitializeFromAnimationService(configName);
+            Debug.Log($"[PatientDialogueController] Using serialized sitCharacterAnimationController with config: {configName}");
+            
             var context = new ToolContext
             {
                 CharacterId = characterId,
                 AnimationConfig = AnimationService.Instance.CurrentConfig,
-                AnimationController = charAnimController
+                AnimationController = animController
             };
             ToolRegistry.Instance.CurrentContext = context;
+        }
+        else
+        {
+            var sitAnimCtrl = GetComponent<sitCharacterAnimationController>();
+            var charAnimController = GetComponent<CharacterAnimationController>();
+            
+            if (sitAnimCtrl != null)
+            {
+                sitAnimCtrl.InitializeFromAnimationService(configName);
+                Debug.Log($"[PatientDialogueController] Using GetComponent sitCharacterAnimationController with config: {configName}");
+                
+                var context = new ToolContext
+                {
+                    CharacterId = characterId,
+                    AnimationConfig = AnimationService.Instance.CurrentConfig,
+                    AnimationController = sitAnimCtrl
+                };
+                ToolRegistry.Instance.CurrentContext = context;
+            }
+            else if (charAnimController != null)
+            {
+                AnimationService.Instance.SetCharacter(charAnimController, configName);
+                Debug.Log($"[PatientDialogueController] Using CharacterAnimationController with config: {configName}");
+
+                var context = new ToolContext
+                {
+                    CharacterId = characterId,
+                    AnimationConfig = AnimationService.Instance.CurrentConfig,
+                    AnimationController = charAnimController
+                };
+                ToolRegistry.Instance.CurrentContext = context;
+            }
+            else
+            {
+                Debug.LogWarning("[PatientDialogueController] No animation controller found - neither sitCharacterAnimationController nor CharacterAnimationController");
+            }
         }
 
         LlmEventBus.Subscribe<SessionCompleteEvent>(HandleSessionComplete);
@@ -192,6 +233,28 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
     public PatientProfile GetProfile()
     {
         return profile;
+    }
+    
+    public ICharacterAnimation GetAnimationController()
+    {
+        if (animController != null)
+        {
+            return animController;
+        }
+        
+        var sitAnimCtrl = GetComponent<sitCharacterAnimationController>();
+        if (sitAnimCtrl != null)
+        {
+            return sitAnimCtrl;
+        }
+        
+        var charAnimController = GetComponent<CharacterAnimationController>();
+        if (charAnimController != null)
+        {
+            return charAnimController;
+        }
+        
+        return null;
     }
     
     private void HandleSessionComplete(SessionCompleteEvent args)
