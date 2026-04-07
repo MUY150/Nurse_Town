@@ -1,20 +1,25 @@
 using UnityEngine;
+using System;
 
 public class AnimationService : Singleton<AnimationService>
 {
-    private CharacterAnimationController _currentController;
+    private ICharacterAnimation _currentController;
     private AnimationConfig _currentConfig;
     private string _currentCharacterId;
 
-    public CharacterAnimationController CurrentController => _currentController;
+    public event Action<AnimationConfig> OnConfigChanged;
+
+    public ICharacterAnimation CurrentController => _currentController;
     public AnimationConfig CurrentConfig => _currentConfig;
     public string CurrentCharacterId => _currentCharacterId;
 
-    public void SetCharacter(CharacterAnimationController controller, string configName)
+    public void SetCharacter(ICharacterAnimation controller, string configName)
     {
         _currentController = controller;
         _currentConfig = AnimationConfigLoader.LoadFromFile(configName);
         _currentCharacterId = configName;
+        
+        OnConfigChanged?.Invoke(_currentConfig);
         
         Debug.Log($"[AnimationService] Character set: {configName}");
     }
@@ -49,11 +54,7 @@ public class AnimationService : Singleton<AnimationService>
             return;
         }
 
-        var charAnimController = _currentController as CharacterAnimationController;
-        if (charAnimController != null)
-        {
-            charAnimController.TriggerBloodEffect();
-        }
+        _currentController.TriggerBloodEffect();
     }
 
     public string[] GetAvailableAnimations()

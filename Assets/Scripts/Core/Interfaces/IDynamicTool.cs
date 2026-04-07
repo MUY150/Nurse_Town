@@ -10,5 +10,5 @@ public class ToolContext
 {
     public string CharacterId { get; set; }
     public AnimationConfig AnimationConfig { get; set; }
-    public CharacterAnimationController AnimationController { get; set; }
+    public ICharacterAnimation AnimationController { get; set; }
 }

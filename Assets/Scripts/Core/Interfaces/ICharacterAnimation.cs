@@ -25,4 +25,15 @@ public interface ICharacterAnimation
     /// </summary>
     /// <param name="emotionCode">情绪代码</param>
     void PlayByEmotionCode(int emotionCode);
+    
+    /// <summary>
+    /// 根据动画名称播放动画
+    /// </summary>
+    /// <param name="animationName">动画名称</param>
+    void PlayByName(string animationName);
+    
+    /// <summary>
+    /// 触发血液效果
+    /// </summary>
+    void TriggerBloodEffect();
 }

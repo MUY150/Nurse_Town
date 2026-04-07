@@ -275,6 +275,11 @@ public class CurrentChatUI : MonoBehaviour
             Debug.LogWarning("[CurrentChatUI] No patient dialogue controller found, cannot send message");
         }
         #pragma warning restore CS0618
+        
+        if (panel != null && panel.activeSelf)
+        {
+            RefreshChat();
+        }
     }
 
     private void ScrollToTop()

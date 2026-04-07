@@ -1,13 +1,15 @@
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 public interface ILlmAdapter
 {
     string ProviderName { get; }
     string GetApiUrl();
     Dictionary<string, string> GetHeaders(string apiKey);
-    string BuildRequestBody(List<LlmMessage> messages, string model, float temperature, int maxTokens);
+    string BuildRequestBody(List<LlmMessage> messages, string model, float temperature, int maxTokens, JArray tools = null);
     string ParseResponse(string jsonResponse);
     LlmUsage ParseUsage(string jsonResponse);
+    List<ToolCall> ParseToolCalls(string jsonResponse);
 }
 
 public class LlmMessage

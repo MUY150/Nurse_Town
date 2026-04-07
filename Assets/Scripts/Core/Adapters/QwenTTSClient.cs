@@ -15,7 +15,7 @@ public class QwenTTSClient : MonoBehaviour, ITTSClient
 {
     private string _apiUrl;
     private string _apiKey;
-    private string _voice = "longxiaochun";
+    private string _voice = "Serena";
     private float _speed = 1.0f;
 
     public AudioSource audioSource;

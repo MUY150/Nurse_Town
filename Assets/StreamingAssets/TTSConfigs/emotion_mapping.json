@@ -6,7 +6,7 @@
       "speedModifier": 1.0,
       "pitchModifier": 1.0,
       "volumeModifier": 1.0,
-      "voiceSuggestion": "longxiaochun",
+      "voiceSuggestion": "Serena",
       "exampleTexts": [
         "护士您好，我是约翰逊太太。",
         "我今年62岁了。"
@@ -78,7 +78,7 @@
       "speedModifier": 0.85,
       "pitchModifier": 0.9,
       "volumeModifier": 0.9,
-      "voiceSuggestion": "zhiyan",
+      "voiceSuggestion": "Vincent",
       "exampleTexts": [
         "我...我...想...说...",
         "唉...说...不...出来..."

@@ -1,14 +1,25 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class MessageItem : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI roleText;
     [SerializeField] private TextMeshProUGUI messageText;
+    [SerializeField] private RectTransform rectTransform;
+    
+    [SerializeField] private float minHeight = 50f;
+    [SerializeField] private float verticalPadding = 16f;
+    [SerializeField] private float roleHeight = 30f;
 
     private void Awake()
     {
         Debug.Log($"[MessageItem] Awake - roleText: {(roleText != null ? "OK" : "NULL")}, messageText: {(messageText != null ? "OK" : "NULL")}");
+        
+        if (rectTransform == null)
+        {
+            rectTransform = GetComponent<RectTransform>();
+        }
     }
 
     public void SetContent(string role, string content, Color roleColor)
@@ -36,6 +47,8 @@ public class MessageItem : MonoBehaviour
         {
             Debug.LogError("[MessageItem] messageText is NULL!");
         }
+        
+        AdjustHeight();
     }
 
     public void SetContent(string content, Color color)
@@ -50,5 +63,31 @@ public class MessageItem : MonoBehaviour
             messageText.text = content;
             messageText.color = color;
         }
+        
+        AdjustHeight();
+    }
+    
+    private void AdjustHeight()
+    {
+        if (messageText == null || rectTransform == null) return;
+        
+        StartCoroutine(AdjustHeightCoroutine());
+    }
+    
+    private System.Collections.IEnumerator AdjustHeightCoroutine()
+    {
+        yield return null;
+        
+        messageText.ForceMeshUpdate(true);
+        
+        float textHeight = messageText.preferredHeight;
+        float actualRoleHeight = (roleText != null && roleText.gameObject.activeSelf) ? roleHeight : 0f;
+        
+        float requiredHeight = actualRoleHeight + textHeight + verticalPadding;
+        requiredHeight = Mathf.Max(requiredHeight, minHeight);
+        
+        rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, requiredHeight);
+        
+        Debug.Log($"[MessageItem] Adjusted height: {requiredHeight}, textHeight: {textHeight}, roleHeight: {actualRoleHeight}");
     }
 }

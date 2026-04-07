@@ -13,6 +13,9 @@ public class PatientProfile
     public bool enableChatUI = false;
     public string[] variantFiles;
     
+    public string baseSkillContent;
+    public string patientSkillContent;
+    
     public List<string> patientInstructionsList;
     
     public PatientProfile()

@@ -26,3 +26,22 @@ public class MessageSnapshot
         Timestamp = timestamp;
     }
 }
+
+[Serializable]
+public class ToolCallSnapshot
+{
+    public string Id { get; set; }
+    public string Name { get; set; }
+    public string Arguments { get; set; }
+
+    public ToolCallSnapshot()
+    {
+    }
+
+    public ToolCallSnapshot(string id, string name, string arguments)
+    {
+        Id = id;
+        Name = name;
+        Arguments = arguments;
+    }
+}

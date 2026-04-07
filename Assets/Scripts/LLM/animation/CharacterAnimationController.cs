@@ -6,43 +6,82 @@ public class CharacterAnimationController : MonoBehaviour, ICharacterAnimation
     [Header("血液效果（可选）")]
     [SerializeField] private BloodEffectController bloodEffectController;
     [SerializeField] private BloodTextController bloodTextController;
-    
+
+    [Header("默认动画配置")]
+    [SerializeField] private string idleTriggerName = "idle";
+    [SerializeField] private string talkingTriggerName = "talking";
+
     private Animator animator;
     private AnimationConfig config;
-    private int motionState = 0;
-    
+
     public AnimationConfig Config => config;
-    
+
     void Start()
     {
         animator = GetComponent<Animator>();
-        UpdateAnimationState(motionState);
     }
-    
+
     public void SetConfig(AnimationConfig newConfig)
     {
         config = newConfig;
+
+        ValidateAnimatorParameters();
+
         Debug.Log($"[CharacterAnimationController] Config set: {config?.characterType}, maxEmotionCode: {config?.maxEmotionCode}");
+
+        PlayIdle();
     }
-    
+
+    private void ValidateAnimatorParameters()
+    {
+        if (animator == null || config == null) return;
+
+        if (config.emotionMappings != null)
+        {
+            foreach (var mapping in config.emotionMappings)
+            {
+                if (!mapping.isIdle && !string.IsNullOrEmpty(mapping.triggerName))
+                {
+                    bool hasTrigger = animator.HasParameterOfType(mapping.triggerName, AnimatorControllerParameterType.Trigger);
+                    if (!hasTrigger)
+                    {
+                        Debug.LogWarning($"[CharacterAnimationController] Missing trigger parameter: '{mapping.triggerName}' in Animator Controller");
+                    }
+                }
+            }
+        }
+
+        if (!string.IsNullOrEmpty(idleTriggerName))
+        {
+            bool hasIdleTrigger = animator.HasParameterOfType(idleTriggerName, AnimatorControllerParameterType.Trigger);
+            if (!hasIdleTrigger)
+            {
+                Debug.LogWarning($"[CharacterAnimationController] Idle trigger '{idleTriggerName}' not found");
+            }
+        }
+    }
+
     public void UpdateAnimationState(int newState)
     {
-        motionState = newState;
-        
-        // 验证Animator参数是否存在
-        if (animator != null && animator.HasParameterOfType("Motion", AnimatorControllerParameterType.Int))
-        {
-            animator.SetInteger("Motion", motionState);
-        }
-        else
-        {
-            Debug.LogWarning("[CharacterAnimationController] Animator parameter 'Motion' (Int) not found");
-        }
+        PlayByEmotionCode(newState);
     }
     
     public void PlayIdle()
     {
-        UpdateAnimationState(0);
+        if (animator != null && !string.IsNullOrEmpty(idleTriggerName))
+        {
+            if (animator.HasParameterOfType(idleTriggerName, AnimatorControllerParameterType.Trigger))
+            {
+                animator.SetTrigger(idleTriggerName);
+                return;
+            }
+        }
+
+        var idleMapping = config?.emotionMappings?.Find(m => m.isIdle);
+        if (idleMapping != null && !string.IsNullOrEmpty(idleMapping.triggerName))
+        {
+            PlayAnimation(idleMapping.triggerName);
+        }
     }
     
     public void PlayAnimation(string triggerName)

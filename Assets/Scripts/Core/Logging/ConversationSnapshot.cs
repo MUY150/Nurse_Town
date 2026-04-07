@@ -14,6 +14,7 @@ public class ConversationSnapshot
     public ConversationEventType EventType { get; set; }
     public ConversationStatistics Statistics { get; set; }
     public string RawRequestJson { get; set; }
+    public List<ToolCallSnapshot> ToolCalls { get; set; }
 
     public ConversationSnapshot()
     {
@@ -21,6 +22,7 @@ public class ConversationSnapshot
         Metadata = new Dictionary<string, object>();
         Statistics = new ConversationStatistics();
         Timestamp = DateTime.Now;
+        ToolCalls = new List<ToolCallSnapshot>();
     }
 
     public ConversationSnapshot(string sessionId, string provider, string model)
@@ -32,6 +34,7 @@ public class ConversationSnapshot
         Metadata = new Dictionary<string, object>();
         Statistics = new ConversationStatistics();
         Timestamp = DateTime.Now;
+        ToolCalls = new List<ToolCallSnapshot>();
     }
 }
 

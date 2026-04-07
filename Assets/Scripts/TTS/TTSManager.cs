@@ -8,6 +8,7 @@ using UnityEngine.Audio;
 using System.Collections;
 using Newtonsoft.Json;
 using System.Text;
+using NurseTown.Core.Events;
 
 /// <summary>
 /// 文本转语音管理器，负责将文本转换为语音并播放，支持Qwen TTS API和Audio2Face集成
@@ -42,16 +43,12 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
     [Tooltip("Reference to the AudioSource where the speech will be played")]
     public AudioSource audioSource;
 
-    [Header("动画控制器（可选，留空则自动查找）")]
-    [Tooltip("自定义动画控制器，留空则根据角色类型自动查找")]
-    [SerializeField] private MonoBehaviour customAnimationController;
-
     [Header("TTS Configuration")]
     [Tooltip("API key for DashScope (Qwen TTS) - loaded from environment variable by default")]
     [SerializeField] private string dashScopeApiKey;
 
-    [Tooltip("Voice name for Qwen TTS (e.g., longxiaochun, zhihao)")]
-    public string voice = "longxiaochun";
+    [Tooltip("Voice name for Qwen TTS (e.g., Cherry, Serena, Ethan)")]
+    public string voice = "Serena";
 
     [Header("Voice Settings")]
     [Range(0.5f, 2.0f)]
@@ -71,11 +68,11 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
 
     private static readonly string ttsEndpoint = "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
-    private ICharacterAnimation animationController;
     private BloodEffectController bloodEffectController;
     private BloodTextController bloodTextController;
     private Audio2FaceManager audio2FaceManager;
     private EmotionMappingConfig _emotionConfig;
+    private string _currentEmotion;
 
     private static readonly HttpClient httpClient = new HttpClient();
 
@@ -88,7 +85,12 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         }
 
         LoadEmotionConfig();
-        ResolveAnimationController();
+
+        if (TTSEventPublisher.Instance == null)
+        {
+            var publisher = new GameObject("TTSEventPublisher");
+            publisher.AddComponent<TTSEventPublisher>();
+        }
 
         if (useAudio2Face)
         {
@@ -116,46 +118,6 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         if (bloodTextController == null)
         {
             Debug.LogError("BloodTextController not found in the scene. Make sure it exists in the UI!");
-        }
-    }
-
-    /// <summary>
-    /// 解析动画控制器
-    /// </summary>
-    private void ResolveAnimationController()
-    {
-        if (customAnimationController != null)
-        {
-            animationController = customAnimationController as ICharacterAnimation;
-            if (animationController == null)
-            {
-                Debug.LogError("[TTSManager] Custom animation controller does not implement ICharacterAnimation");
-            }
-            return;
-        }
-        
-        animationController = GetComponent<ICharacterAnimation>();
-        
-        if (animationController == null)
-        {
-            Debug.LogWarning("[TTSManager] No ICharacterAnimation found, trying legacy controllers...");
-            
-            var standingController = GetComponent<CharacterAnimationController>();
-            var sittingController = GetComponent<sitCharacterAnimationController>();
-            
-            if (standingController != null)
-                animationController = standingController as ICharacterAnimation;
-            else if (sittingController != null)
-                animationController = sittingController as ICharacterAnimation;
-        }
-        
-        if (animationController == null)
-        {
-            Debug.LogError("[TTSManager] No valid animation controller found!");
-        }
-        else
-        {
-            Debug.Log($"[TTSManager] Animation controller resolved successfully");
         }
     }
 
@@ -222,6 +184,8 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         
         Debug.Log($"[TTSManager] TTS request: text='{ttsText.Substring(0, System.Math.Min(30, ttsText.Length))}...', emotion={emotion}, speed={actualSpeed}, pitch={pitch}");
 
+        _currentEmotion = emotion;
+
         byte[] audioData = await GetQwenTTSAudio(ttsText, actualSpeed, pitch);
 
         if (audioData != null)
@@ -251,7 +215,7 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
     private async Task<byte[]> GetQwenTTSAudio(string inputText, float? speedOverride = null, float pitch = 1.0f)
     {
         float useSpeed = speedOverride ?? speed;
-        
+
         var requestBody = new
         {
             model = "qwen3-tts-flash",
@@ -264,13 +228,17 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
                 format = "wav",
                 sample_rate = 24000,
                 speed = useSpeed,
-                volume = 1.0f,
                 pitch = pitch
             }
         };
 
         string jsonContent = JsonConvert.SerializeObject(requestBody);
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+        Debug.Log($"[TTSManager] === TTS HTTP Request Details ===");
+        Debug.Log($"[TTSManager] Endpoint: {ttsEndpoint}");
+        Debug.Log($"[TTSManager] Request Body: {jsonContent}");
+        Debug.Log($"[TTSManager] ====================================");
 
         httpClient.DefaultRequestHeaders.Clear();
         httpClient.DefaultRequestHeaders.Authorization =
@@ -280,6 +248,10 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         {
             HttpResponseMessage response = await httpClient.PostAsync(ttsEndpoint, content);
             string responseBody = await response.Content.ReadAsStringAsync();
+
+            Debug.Log($"[TTSManager] TTS API Response - Status Code: {response.StatusCode}");
+            Debug.Log($"[TTSManager] TTS API Response - Response Body Length: {responseBody.Length} characters");
+            Debug.Log($"[TTSManager] TTS API Response - First 500 chars: {responseBody.Substring(0, Math.Min(500, responseBody.Length))}");
 
             if (!response.IsSuccessStatusCode)
             {
@@ -296,7 +268,7 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
                 
                 if (!string.IsNullOrEmpty(jsonResponse.output.audio.data))
                 {
-                    Debug.Log("[TTSManager] Using Base64 data from new API format");
+                    Debug.Log($"[TTSManager] Using Base64 data from new API format, length: {jsonResponse.output.audio.data.Length}");
                     return Convert.FromBase64String(jsonResponse.output.audio.data);
                 }
                 
@@ -332,15 +304,75 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
             using (var httpClient = new HttpClient())
             {
                 httpClient.Timeout = TimeSpan.FromSeconds(30);
+                
+                Debug.Log($"[TTSManager] Starting audio download from URL: {url}");
+                Debug.Log($"[TTSManager] HTTP Client timeout: 30 seconds");
+                
                 byte[] audioData = await httpClient.GetByteArrayAsync(url);
-                Debug.Log($"[TTSManager] Successfully downloaded audio from URL: {audioData.Length} bytes");
+                
+                Debug.Log($"[TTSManager] Successfully downloaded audio from URL");
+                Debug.Log($"[TTSManager] Downloaded bytes: {audioData.Length} bytes ({audioData.Length / 1024.0:F2} KB)");
+                
                 return audioData;
             }
         }
         catch (Exception ex)
         {
             Debug.LogError($"[TTSManager] Failed to download audio from URL: {ex.Message}");
+            Debug.LogError($"[TTSManager] Exception details: {ex.StackTrace}");
             return null;
+        }
+    }
+
+    /// <summary>
+    /// 修复WAV文件头的chunk大小字段
+    /// 阿里云TTS返回的WAV文件data chunk大小字段是错误值，需要根据实际数据大小修正
+    /// </summary>
+    /// <param name="audioData">原始音频数据</param>
+    /// <returns>修复后的音频数据</returns>
+    private byte[] FixWavChunkSize(byte[] audioData)
+    {
+        if (audioData == null || audioData.Length < 44)
+        {
+            return audioData;
+        }
+
+        try
+        {
+            byte[] riff = { audioData[0], audioData[1], audioData[2], audioData[3] };
+            if (riff[0] != 0x52 || riff[1] != 0x49 || riff[2] != 0x46 || riff[3] != 0x46)
+            {
+                Debug.LogWarning("[TTSManager] Not a valid WAV file, skipping fix");
+                return audioData;
+            }
+
+            int actualDataSize = audioData.Length - 44;
+            int dataChunkSizePos = 40;
+
+            byte[] correctedSize = BitConverter.GetBytes(actualDataSize);
+
+            byte[] fixedData = new byte[audioData.Length];
+            Array.Copy(audioData, 0, fixedData, 0, audioData.Length);
+
+            fixedData[dataChunkSizePos] = correctedSize[0];
+            fixedData[dataChunkSizePos + 1] = correctedSize[1];
+            fixedData[dataChunkSizePos + 2] = correctedSize[2];
+            fixedData[dataChunkSizePos + 3] = correctedSize[3];
+
+            int fileSizeMinus8 = audioData.Length - 8;
+            byte[] correctedFileSize = BitConverter.GetBytes(fileSizeMinus8);
+            fixedData[4] = correctedFileSize[0];
+            fixedData[5] = correctedFileSize[1];
+            fixedData[6] = correctedFileSize[2];
+            fixedData[7] = correctedFileSize[3];
+
+            Debug.Log($"[TTSManager] Fixed WAV chunk sizes: data={actualDataSize} bytes, file_size={fileSizeMinus8} bytes");
+            return fixedData;
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[TTSManager] Failed to fix WAV chunk size: {ex.Message}");
+            return audioData;
         }
     }
 
@@ -356,7 +388,8 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
             Debug.Log("Starting Audio2Face processing...");
 
             string filePath = Path.Combine(Application.persistentDataPath, $"{Guid.NewGuid()}.wav");
-            File.WriteAllBytes(filePath, audioData);
+            byte[] fixedAudioData = FixWavChunkSize(audioData);
+            File.WriteAllBytes(filePath, fixedAudioData);
 
             bool success = await audio2FaceManager.ProcessAudioForFacialAnimation(File.ReadAllBytes(filePath), messageContent);
 
@@ -385,7 +418,8 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
     private void ProcessAudioBytes(byte[] audioData, string messageContent)
     {
         string filePath = Path.Combine(Application.persistentDataPath, $"{Guid.NewGuid()}.wav");
-        File.WriteAllBytes(filePath, audioData);
+        byte[] fixedAudioData = FixWavChunkSize(audioData);
+        File.WriteAllBytes(filePath, fixedAudioData);
 
         StartCoroutine(LoadAndPlayAudio(filePath, messageContent));
     }
@@ -484,9 +518,26 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
             audioSource.clip = audioClip;
             audioSource.Play();
 
-            UpdateAnimation(messageContent);
+            var startedEvent = new TTSSpeakStartedEvent
+            {
+                SessionId = "tts-session",
+                Timestamp = DateTime.Now,
+                Text = messageContent,
+                Emotion = _currentEmotion ?? "neutral",
+                Duration = audioClip.length
+            };
+            TTSEventPublisher.Instance?.PublishSpeakStarted(startedEvent);
 
             yield return new WaitForSeconds(waitTime);
+
+            var endedEvent = new TTSSpeakEndedEvent
+            {
+                SessionId = "tts-session",
+                Timestamp = DateTime.Now,
+                Text = messageContent,
+                WasCompleted = true
+            };
+            TTSEventPublisher.Instance?.PublishSpeakEnded(endedEvent);
 
             Debug.Log("[TTSManager] Audio playback completed");
         }
@@ -539,21 +590,5 @@ public class TTSManager : Singleton<TTSManager>, ITTSProvider
         public string url;
         public string id;
         public long expires_at;
-    }
-
-    /// <summary>
-    /// 根据消息内容更新动画
-    /// </summary>
-    /// <param name="message">消息内容</param>
-    public void UpdateAnimation(string message)
-    {
-        if (animationController == null)
-        {
-            Debug.LogWarning("[TTSManager] Cannot update animation: animationController is null");
-            return;
-        }
-
-        // 直接调用idle，动画由Tool控制
-        animationController.PlayIdle();
     }
 }

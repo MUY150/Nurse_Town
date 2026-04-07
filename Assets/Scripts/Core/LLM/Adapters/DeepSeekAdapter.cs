@@ -23,19 +23,24 @@ public class DeepSeekAdapter : ILlmAdapter
         };
     }
     
-    public string BuildRequestBody(List<LlmMessage> messages, string model, float temperature, int maxTokens)
+    public string BuildRequestBody(List<LlmMessage> messages, string model, float temperature, int maxTokens, JArray tools = null)
     {
         var messageList = messages.Select(m => new { role = m.Role, content = m.Content }).ToList();
         
-        var requestBody = new
+        var requestBody = new JObject
         {
-            model = model,
-            messages = messageList,
-            temperature = temperature,
-            max_tokens = maxTokens
+            ["model"] = model,
+            ["messages"] = JArray.FromObject(messageList),
+            ["temperature"] = temperature,
+            ["max_tokens"] = maxTokens
         };
         
-        return JsonConvert.SerializeObject(requestBody);
+        if (tools != null && tools.Count > 0)
+        {
+            requestBody["tools"] = tools;
+        }
+        
+        return requestBody.ToString(Formatting.None);
     }
     
     public string ParseResponse(string jsonResponse)
@@ -78,5 +83,40 @@ public class DeepSeekAdapter : ILlmAdapter
                 TotalTokens = 0
             };
         }
+    }
+    
+    public List<ToolCall> ParseToolCalls(string jsonResponse)
+    {
+        var toolCalls = new List<ToolCall>();
+        
+        try
+        {
+            var response = JObject.Parse(jsonResponse);
+            var choice = response["choices"]?[0];
+            var message = choice?["message"];
+            var calls = message?["tool_calls"] as JArray;
+            
+            if (calls != null)
+            {
+                foreach (var call in calls)
+                {
+                    var function = call["function"];
+                    toolCalls.Add(new ToolCall
+                    {
+                        Id = call["id"]?.ToString(),
+                        Name = function?["name"]?.ToString(),
+                        Arguments = function?["arguments"] != null 
+                            ? JObject.Parse(function["arguments"].ToString()) 
+                            : new JObject()
+                    });
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[DeepSeekAdapter] Failed to parse tool calls: {e.Message}");
+        }
+        
+        return toolCalls;
     }
 }

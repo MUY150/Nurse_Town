@@ -47,6 +47,48 @@ public static class PatientConfigLoader
             }
         }
         
+        LoadSkillFiles(profile, basePath);
+        
+        if (profile.patientInstructionsList.Count == 0)
+        {
+            LoadLegacyTxtFiles(profile, basePath);
+        }
+        
+        if (profile.patientInstructionsList.Count == 0)
+        {
+            Debug.LogWarning($"No patient instructions found for scenario: {scenarioName}");
+        }
+        
+        configCache[scenarioName] = profile;
+        return profile;
+    }
+    
+    private static void LoadSkillFiles(PatientProfile profile, string basePath)
+    {
+        string baseSkillPath = Path.Combine(Application.streamingAssetsPath, "Prompts", "base_skill.md");
+        if (File.Exists(baseSkillPath))
+        {
+            profile.baseSkillContent = File.ReadAllText(baseSkillPath);
+            Debug.Log($"[PatientConfigLoader] Loaded base_skill.md");
+        }
+        
+        string patientSkillPath = Path.Combine(basePath, "patient_skill.md");
+        if (File.Exists(patientSkillPath))
+        {
+            profile.patientSkillContent = File.ReadAllText(patientSkillPath);
+            Debug.Log($"[PatientConfigLoader] Loaded patient_skill.md for {profile.scenarioName}");
+        }
+        
+        if (!string.IsNullOrEmpty(profile.baseSkillContent) && !string.IsNullOrEmpty(profile.patientSkillContent))
+        {
+            string fullPrompt = $"{profile.baseSkillContent}\n\n{profile.patientSkillContent}";
+            profile.patientInstructionsList.Add(fullPrompt);
+            Debug.Log($"[PatientConfigLoader] Combined skill files into full prompt ({fullPrompt.Length} chars)");
+        }
+    }
+    
+    private static void LoadLegacyTxtFiles(PatientProfile profile, string basePath)
+    {
         string baseInstructionsPath = Path.Combine(basePath, "baseInstructions.txt");
         if (File.Exists(baseInstructionsPath))
         {
@@ -66,14 +108,6 @@ public static class PatientConfigLoader
                 }
             }
         }
-        
-        if (profile.patientInstructionsList.Count == 0)
-        {
-            Debug.LogWarning($"No patient variants found for scenario: {scenarioName}");
-        }
-        
-        configCache[scenarioName] = profile;
-        return profile;
     }
     
     public static PatientProfile LoadDefault()

@@ -16,4 +16,11 @@ public interface ILlmClient
     
     event Action<string> OnMessageReceived;
     event Action OnConversationUpdated;
+    
+    void RegisterTool(ITool tool);
+    void UnregisterTool(string toolName);
+    IReadOnlyList<ITool> GetRegisteredTools();
+    bool HasTools { get; }
+    
+    event Action<ToolCallEventArgs> OnToolCalled;
 }

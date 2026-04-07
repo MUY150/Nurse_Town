@@ -11,13 +11,16 @@ public class LlmClient : ILlmClient
     private string _provider;
     private string _model;
     private bool _enableLogging = true;
+    private List<ITool> _tools = new List<ITool>();
 
     public string SessionId => _sessionId;
     public string ProviderName => _provider;
     public string ModelName => _model;
+    public bool HasTools => _tools.Count > 0;
 
     public event Action<string> OnMessageReceived;
     public event Action OnConversationUpdated;
+    public event Action<ToolCallEventArgs> OnToolCalled;
 
     public LlmClient() { }
 
@@ -38,6 +41,7 @@ public class LlmClient : ILlmClient
         _enableLogging = enableLogging;
         _sessionId = $"session_{System.DateTime.Now:yyyyMMdd_HHmmss}_{System.Guid.NewGuid().ToString("N").Substring(0, 8)}";
         _messages = new List<LlmMessage>();
+        _tools = new List<ITool>();
         
         _provider = LlmConfig.Instance.GetProviderForScene(scene);
         var providerConfig = LlmConfig.Instance.GetProviderConfig(_provider);
@@ -50,6 +54,8 @@ public class LlmClient : ILlmClient
         
         if (_enableLogging)
         {
+            var _ = ConversationLogger.Instance;
+            
             var startEvent = new SessionStartEvent
             {
                 SessionId = _sessionId,
@@ -62,6 +68,34 @@ public class LlmClient : ILlmClient
             
             Debug.Log($"[LlmClient] Initialized: scene={_scene}, provider={_provider}, model={_model}, sessionId={_sessionId}");
         }
+    }
+
+    public void RegisterTool(ITool tool)
+    {
+        if (tool == null) return;
+        
+        if (!_tools.Contains(tool))
+        {
+            _tools.Add(tool);
+            ToolRegistry.Instance?.RegisterTool(tool);
+            Debug.Log($"[LlmClient] Registered tool: {tool.Name}");
+        }
+    }
+
+    public void UnregisterTool(string toolName)
+    {
+        var tool = _tools.Find(t => t.Name.Equals(toolName, StringComparison.OrdinalIgnoreCase));
+        if (tool != null)
+        {
+            _tools.Remove(tool);
+            ToolRegistry.Instance?.UnregisterTool(toolName);
+            Debug.Log($"[LlmClient] Unregistered tool: {toolName}");
+        }
+    }
+
+    public IReadOnlyList<ITool> GetRegisteredTools()
+    {
+        return _tools.AsReadOnly();
     }
 
     public void SendChatMessage(string userMessage)
@@ -83,7 +117,8 @@ public class LlmClient : ILlmClient
             Scene = _scene,
             OnSuccess = HandleSuccess,
             OnError = HandleError,
-            RetryCount = 0
+            RetryCount = 0,
+            Tools = HasTools ? ToolRegistry.Instance?.GetToolsSchema() : null
         };
         
         LlmService.Instance.SendRequest(request);
@@ -100,6 +135,24 @@ public class LlmClient : ILlmClient
     private void HandleError(string error)
     {
         Debug.LogError($"[LlmClient] Error: {error}");
+    }
+
+    public void HandleToolCalls(List<ToolCall> toolCalls)
+    {
+        if (toolCalls == null || toolCalls.Count == 0) return;
+        
+        foreach (var toolCall in toolCalls)
+        {
+            var result = ToolRegistry.Instance?.ExecuteTool(toolCall.Name, toolCall.Arguments);
+            
+            var args = new ToolCallEventArgs
+            {
+                ToolName = toolCall.Name,
+                Parameters = toolCall.Arguments,
+                Result = result
+            };
+            OnToolCalled?.Invoke(args);
+        }
     }
 
     public void ClearHistory()

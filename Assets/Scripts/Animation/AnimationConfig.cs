@@ -33,11 +33,58 @@ public class AnimationConfig
         if (namedAnimations == null) return null;
         return namedAnimations.TryGetValue(name, out var trigger) ? trigger : null;
     }
+    
+    public EmotionMapping GetMappingByTriggerName(string triggerName)
+    {
+        if (emotionMappings == null) return null;
+        foreach (var mapping in emotionMappings)
+        {
+            if (mapping.triggerName == triggerName)
+            {
+                return mapping;
+            }
+        }
+        return null;
+    }
 
     public string GetAnimationDescription(string name)
     {
         if (animationDescriptions == null) return null;
         return animationDescriptions.TryGetValue(name, out var desc) ? desc : null;
+    }
+
+    public string GetEffectIdForAnimation(string animationName)
+    {
+        if (namedAnimations == null || emotionMappings == null) return null;
+
+        string triggerName = namedAnimations.TryGetValue(animationName, out var t) ? t : null;
+        if (string.IsNullOrEmpty(triggerName)) return null;
+
+        foreach (var mapping in emotionMappings)
+        {
+            if (mapping.triggerName == triggerName && !string.IsNullOrEmpty(mapping.effectId))
+            {
+                return mapping.effectId;
+            }
+        }
+        return null;
+    }
+
+    public float GetEffectDelayForAnimation(string animationName)
+    {
+        if (namedAnimations == null || emotionMappings == null) return 0f;
+
+        string triggerName = namedAnimations.TryGetValue(animationName, out var t) ? t : null;
+        if (string.IsNullOrEmpty(triggerName)) return 0f;
+
+        foreach (var mapping in emotionMappings)
+        {
+            if (mapping.triggerName == triggerName)
+            {
+                return mapping.effectDelay;
+            }
+        }
+        return 0f;
     }
 }
 
@@ -48,4 +95,6 @@ public class EmotionMapping
     public string triggerName;
     public bool isIdle;
     public bool triggerBloodEffect;
+    public string effectId;
+    public float effectDelay = 0f;
 }

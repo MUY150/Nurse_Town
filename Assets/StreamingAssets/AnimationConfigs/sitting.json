@@ -6,7 +6,7 @@
     { "emotionCode": 1, "triggerName": "rub_arm", "isIdle": false, "triggerBloodEffect": false },
     { "emotionCode": 2, "triggerName": "sad", "isIdle": false, "triggerBloodEffect": false },
     { "emotionCode": 3, "triggerName": "thumb_up", "isIdle": false, "triggerBloodEffect": false },
-    { "emotionCode": 4, "triggerName": "BP", "isIdle": false, "triggerBloodEffect": true }
+    { "emotionCode": 4, "triggerName": "BP", "isIdle": false, "triggerBloodEffect": true, "effectId": "blood_pressure", "effectDelay": 0 }
   ],
   "namedAnimations": {
     "bend": "bend",

@@ -25,9 +25,13 @@ public class OpenAILLMClient : MonoBehaviour, ILlmClient
     public string SessionId => _sessionId;
     public string ProviderName => "OpenAI";
     public string ModelName => _model;
+    public bool HasTools => _tools.Count > 0;
 
     public event Action<string> OnMessageReceived;
     public event Action OnConversationUpdated;
+    public event Action<ToolCallEventArgs> OnToolCalled;
+    
+    private List<ITool> _tools = new List<ITool>();
 
     public void SetOwner(MonoBehaviour owner)
     {
@@ -180,6 +184,25 @@ public class OpenAILLMClient : MonoBehaviour, ILlmClient
     public List<Dictionary<string, string>> GetChatHistory()
     {
         return _chatMessages;
+    }
+    
+    public void RegisterTool(ITool tool)
+    {
+        if (tool == null) return;
+        if (!_tools.Contains(tool))
+        {
+            _tools.Add(tool);
+        }
+    }
+    
+    public void UnregisterTool(string toolName)
+    {
+        _tools.RemoveAll(t => t.Name.Equals(toolName, StringComparison.OrdinalIgnoreCase));
+    }
+    
+    public IReadOnlyList<ITool> GetRegisteredTools()
+    {
+        return _tools.AsReadOnly();
     }
 
     private void TriggerSessionStart(string systemPrompt)

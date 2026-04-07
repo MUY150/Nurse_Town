@@ -12,7 +12,7 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
     [SerializeField] private string posture = "sitting";
     
     [Header("组件引用 - 坐姿角色")]
-    [SerializeField] private sitCharacterAnimationController animController;
+    [SerializeField] private CharacterAnimationController animController;
     [SerializeField] private BloodEffectController bloodEffectController;
     
     [Header("组件引用 - 评分系统")]
@@ -96,54 +96,45 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
         // 使用新的配置名格式: patient_{characterId}_{posture}
         string configName = $"patient_{characterId}_{posture}";
         
-        if (animController != null)
+        // 获取动画控制器
+        CharacterAnimationController charAnimController = animController;
+        if (charAnimController == null)
         {
-            animController.InitializeFromAnimationService(configName);
-            Debug.Log($"[PatientDialogueController] Using serialized sitCharacterAnimationController with config: {configName}");
+            charAnimController = GetComponent<CharacterAnimationController>();
+        }
+        
+        if (charAnimController != null)
+        {
+            // 通过 AnimationService 设置角色，它会加载配置并触发事件
+            AnimationService.Instance.SetCharacter(charAnimController, configName);
+
+            // 手动设置配置到控制器（因为 CharacterAnimationController 不自动监听事件）
+            var config = AnimationService.Instance.CurrentConfig;
+            if (config != null)
+            {
+                charAnimController.SetConfig(config);
+
+                // 同时设置到AnimationStateMachine，确保ActTool能正常播放动画
+                if (NurseTown.Core.Animation.AnimationStateMachine.Instance != null)
+                {
+                    NurseTown.Core.Animation.AnimationStateMachine.Instance.SetAnimationConfig(config);
+                    NurseTown.Core.Animation.AnimationStateMachine.Instance.SetCharacterAnimation(charAnimController);
+                }
+            }
+
+            Debug.Log($"[PatientDialogueController] Using CharacterAnimationController with config: {configName}");
             
             var context = new ToolContext
             {
                 CharacterId = characterId,
-                AnimationConfig = AnimationService.Instance.CurrentConfig,
-                AnimationController = animController
+                AnimationConfig = config,
+                AnimationController = charAnimController
             };
             ToolRegistry.Instance.CurrentContext = context;
         }
         else
         {
-            var sitAnimCtrl = GetComponent<sitCharacterAnimationController>();
-            var charAnimController = GetComponent<CharacterAnimationController>();
-            
-            if (sitAnimCtrl != null)
-            {
-                sitAnimCtrl.InitializeFromAnimationService(configName);
-                Debug.Log($"[PatientDialogueController] Using GetComponent sitCharacterAnimationController with config: {configName}");
-                
-                var context = new ToolContext
-                {
-                    CharacterId = characterId,
-                    AnimationConfig = AnimationService.Instance.CurrentConfig,
-                    AnimationController = sitAnimCtrl
-                };
-                ToolRegistry.Instance.CurrentContext = context;
-            }
-            else if (charAnimController != null)
-            {
-                AnimationService.Instance.SetCharacter(charAnimController, configName);
-                Debug.Log($"[PatientDialogueController] Using CharacterAnimationController with config: {configName}");
-
-                var context = new ToolContext
-                {
-                    CharacterId = characterId,
-                    AnimationConfig = AnimationService.Instance.CurrentConfig,
-                    AnimationController = charAnimController
-                };
-                ToolRegistry.Instance.CurrentContext = context;
-            }
-            else
-            {
-                Debug.LogWarning("[PatientDialogueController] No animation controller found - neither sitCharacterAnimationController nor CharacterAnimationController");
-            }
+            Debug.LogWarning("[PatientDialogueController] No animation controller found - CharacterAnimationController");
         }
 
         LlmEventBus.Subscribe<SessionCompleteEvent>(HandleSessionComplete);
@@ -240,12 +231,6 @@ public class PatientDialogueController : Singleton<PatientDialogueController>, I
         if (animController != null)
         {
             return animController;
-        }
-        
-        var sitAnimCtrl = GetComponent<sitCharacterAnimationController>();
-        if (sitAnimCtrl != null)
-        {
-            return sitAnimCtrl;
         }
         
         var charAnimController = GetComponent<CharacterAnimationController>();

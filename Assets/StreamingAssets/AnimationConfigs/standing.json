@@ -1,7 +1,5 @@
 {
   "characterType": "standing",
-  "characterId": "hypertension",
-  "description": "Hypertension patient - Mrs. Johnson, 62-year-old female",
   "maxEmotionCode": 10,
   "emotionMappings": [
     { "emotionCode": 0, "triggerName": "idle", "isIdle": true, "triggerBloodEffect": false },
@@ -10,7 +8,11 @@
     { "emotionCode": 3, "triggerName": "shrug", "isIdle": false, "triggerBloodEffect": false },
     { "emotionCode": 4, "triggerName": "head_nod", "isIdle": false, "triggerBloodEffect": false },
     { "emotionCode": 5, "triggerName": "head_shake", "isIdle": false, "triggerBloodEffect": false },
-    { "emotionCode": 10, "triggerName": "blood_pre", "isIdle": false, "triggerBloodEffect": true }
+    { "emotionCode": 6, "triggerName": "writhing_pain", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 7, "triggerName": "sad", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 8, "triggerName": "arm_stretch", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 9, "triggerName": "neck_stretch", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 10, "triggerName": "blood_pre", "isIdle": false, "triggerBloodEffect": true, "effectId": "blood_pressure", "effectDelay": 0 }
   ],
   "namedAnimations": {
     "pain": "pain",
@@ -18,16 +20,10 @@
     "shrug": "shrug",
     "head_nod": "head_nod",
     "head_shake": "head_shake",
+    "writhing_pain": "writhing_pain",
     "sad": "sad",
+    "arm_stretch": "arm_stretch",
+    "neck_stretch": "neck_stretch",
     "blood_pressure": "blood_pre"
-  },
-  "animationDescriptions": {
-    "pain": "Hold head, show headache pain",
-    "happy": "Smile, relieved expression",
-    "shrug": "Uncertain, don't know",
-    "head_nod": "Agree, yes",
-    "head_shake": "Disagree, no",
-    "sad": "Worried expression",
-    "blood_pressure": "Arm position for blood pressure measurement"
   }
 }

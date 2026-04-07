@@ -25,9 +25,15 @@ public class DeepSeekLLMClient : MonoBehaviour, ILlmClient
     public string SessionId => _sessionId;
     public string ProviderName => "DeepSeek";
     public string ModelName => _model;
+    public bool HasTools => false;
 
     public event Action<string> OnMessageReceived;
     public event Action OnConversationUpdated;
+    public event Action<ToolCallEventArgs> OnToolCalled;
+
+    public void RegisterTool(ITool tool) { }
+    public void UnregisterTool(string toolName) { }
+    public IReadOnlyList<ITool> GetRegisteredTools() => new List<ITool>().AsReadOnly();
 
     public void SetOwner(MonoBehaviour owner)
     {

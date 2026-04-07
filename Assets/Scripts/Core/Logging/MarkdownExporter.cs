@@ -48,18 +48,113 @@ public class MarkdownExporter : IConversationExporter
         }
     }
 
+    public void ExportAggregated(string filePath, AggregatedSession session)
+    {
+        if (session == null)
+        {
+            Debug.LogWarning("[MarkdownExporter] Cannot export null session");
+            return;
+        }
+
+        try
+        {
+            var sb = new StringBuilder();
+
+            sb.AppendLine($"# 对话记录");
+            sb.AppendLine();
+            sb.AppendLine($"**Session**: {session.SessionId}");
+            sb.AppendLine($"**时间**: {session.StartTime:yyyy-MM-dd HH:mm:ss} - {session.EndTime:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"**模型**: {session.Provider}/{session.Model}");
+            sb.AppendLine();
+            sb.AppendLine("---");
+            sb.AppendLine();
+
+            if (!string.IsNullOrEmpty(session.SystemPrompt))
+            {
+                sb.AppendLine("## 系统提示");
+                sb.AppendLine();
+                sb.AppendLine(session.SystemPrompt);
+                sb.AppendLine();
+                sb.AppendLine("---");
+                sb.AppendLine();
+            }
+
+            if (session.Messages != null && session.Messages.Count > 0)
+            {
+                sb.AppendLine("## 对话内容");
+                sb.AppendLine();
+                foreach (var msg in session.Messages)
+                {
+                    string roleDisplay = GetRoleDisplayName(msg.Role);
+                    sb.AppendLine($"**{roleDisplay}** ({msg.Timestamp:HH:mm:ss}):");
+                    sb.AppendLine();
+                    sb.AppendLine(msg.Content);
+                    sb.AppendLine();
+                }
+                sb.AppendLine("---");
+                sb.AppendLine();
+            }
+
+            if (session.ToolCalls != null && session.ToolCalls.Count > 0)
+            {
+                sb.AppendLine("## 工具调用");
+                sb.AppendLine();
+                foreach (var tc in session.ToolCalls)
+                {
+                    sb.AppendLine($"- **{tc.Name}** ({tc.Timestamp:HH:mm:ss}): {tc.Arguments}");
+                }
+                sb.AppendLine();
+                sb.AppendLine("---");
+                sb.AppendLine();
+            }
+
+            if (session.ScoringMessages != null && session.ScoringMessages.Count > 0)
+            {
+                sb.AppendLine("## 评分对话");
+                sb.AppendLine();
+                foreach (var msg in session.ScoringMessages)
+                {
+                    string roleDisplay = GetRoleDisplayName(msg.Role);
+                    sb.AppendLine($"**{roleDisplay}** ({msg.Timestamp:HH:mm:ss}):");
+                    sb.AppendLine();
+                    sb.AppendLine(msg.Content);
+                    sb.AppendLine();
+                }
+                sb.AppendLine("---");
+                sb.AppendLine();
+            }
+
+            if (!string.IsNullOrEmpty(session.ScoringResult))
+            {
+                sb.AppendLine("## 评分结果");
+                sb.AppendLine();
+                sb.AppendLine(session.ScoringResult);
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("## 使用统计");
+            sb.AppendLine();
+            sb.AppendLine($"- 总Token: {session.TotalTokens}");
+            sb.AppendLine($"- 提示Token: {session.PromptTokens}");
+            sb.AppendLine($"- 完成Token: {session.CompletionTokens}");
+
+            File.WriteAllText(filePath, sb.ToString(), Encoding.UTF8);
+            Debug.Log($"[MarkdownExporter] Exported aggregated session to: {filePath}");
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"[MarkdownExporter] Export aggregated failed: {ex.Message}");
+        }
+    }
+
     private string GetRoleDisplayName(string role)
     {
-        switch (role?.ToLower())
+        return role?.ToLower() switch
         {
-            case "user":
-                return "用户";
-            case "assistant":
-                return "助手";
-            case "system":
-                return "系统";
-            default:
-                return role ?? "未知";
-        }
+            "user" => "用户",
+            "assistant" => "助手",
+            "system" => "系统",
+            _ => role ?? "未知"
+        };
     }
 }

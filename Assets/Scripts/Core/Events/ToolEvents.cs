@@ -35,3 +35,20 @@ public class AnimationExecutedEvent : ILlmEvent
     public DateTime Timestamp { get; set; }
     public string AnimationName { get; set; }
 }
+
+public class TTSSpeakStartedEvent : ILlmEvent
+{
+    public string SessionId { get; set; }
+    public DateTime Timestamp { get; set; }
+    public string Text { get; set; }
+    public string Emotion { get; set; }
+    public float Duration { get; set; }
+}
+
+public class TTSSpeakEndedEvent : ILlmEvent
+{
+    public string SessionId { get; set; }
+    public DateTime Timestamp { get; set; }
+    public string Text { get; set; }
+    public bool WasCompleted { get; set; }
+}

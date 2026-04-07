@@ -1596,34 +1596,6 @@ public async Task<bool> RunPythonScriptForAnimation(string audioFilePath, string
             UnityEngine.Debug.Log($"Setting animation scale to {animationStrength}");
             animationController.animationScale = animationStrength;
             
-            // Update emotion if we have message content
-            if (ttsManager != null && !string.IsNullOrEmpty(messageContent))
-            {
-                UnityEngine.Debug.Log($"Updating animation with message content: {messageContent}");
-    
-                try
-                {
-                    // Check if animationController exists in TTSManager
-                    if (ttsManager.GetComponent<CharacterAnimationController>() != null)
-                    {
-                        ttsManager.UpdateAnimation(messageContent);
-                    }
-                    else
-                    {
-                        UnityEngine.Debug.LogWarning("TTSManager lacks CharacterAnimationController, skipping UpdateAnimation call");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    UnityEngine.Debug.LogError($"Error in ttsManager.UpdateAnimation: {ex.Message}");
-                    // Continue with animation despite emotion update failure
-                }
-            }
-            else if (ttsManager == null)
-            {
-                UnityEngine.Debug.LogWarning("TTSManager is null, cannot update animation!");
-            }
-            
             // Play the audio through the TTSManager's audio source
             if (shouldPlayAudio && ttsManager != null)
             {

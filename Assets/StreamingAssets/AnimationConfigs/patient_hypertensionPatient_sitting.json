@@ -1,0 +1,30 @@
+{
+  "characterId": "patient_hypertensionPatient_sitting",
+  "displayName": "Mrs. Johnson",
+  "roleType": "patient",
+  "condition": "hypertension",
+  "posture": "sitting",
+  "description": "62-year-old female with hypertension, sitting position",
+  "maxEmotionCode": 4,
+  "emotionMappings": [
+    { "emotionCode": 0, "triggerName": "bend", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 1, "triggerName": "rub_arm", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 2, "triggerName": "sad", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 3, "triggerName": "thumb_up", "isIdle": false, "triggerBloodEffect": false },
+    { "emotionCode": 4, "triggerName": "BP", "isIdle": false, "triggerBloodEffect": true, "effectId": "blood_pressure", "effectDelay": 0 }
+  ],
+  "namedAnimations": {
+    "bend": "bend",
+    "rub_arm": "rub_arm",
+    "sad": "sad",
+    "thumb_up": "thumb_up",
+    "blood_pressure": "BP"
+  },
+  "animationDescriptions": {
+    "bend": "Bend forward, show headache pain",
+    "rub_arm": "Rub arm, show discomfort",
+    "sad": "Sad, worried expression",
+    "thumb_up": "Thumbs up, positive response",
+    "blood_pressure": "Arm position for blood pressure measurement"
+  }
+}

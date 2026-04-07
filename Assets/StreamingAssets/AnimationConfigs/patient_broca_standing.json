@@ -1,7 +1,10 @@
 {
-  "characterType": "sitting",
-  "characterId": "broca_aphasia",
-  "description": "Broca's aphasia patient - Mr. James Harris, 65-year-old male",
+  "characterId": "patient_broca_standing",
+  "displayName": "James Harris",
+  "roleType": "patient",
+  "condition": "broca_aphasia",
+  "posture": "standing",
+  "description": "65-year-old male with Broca's aphasia after stroke, standing position",
   "maxEmotionCode": 5,
   "emotionMappings": [
     { "emotionCode": 0, "triggerName": "idle", "isIdle": true, "triggerBloodEffect": false },

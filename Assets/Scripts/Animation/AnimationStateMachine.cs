@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections.Generic;
+using NurseTown.Core.Events;
 
 namespace NurseTown.Core.Animation
 {
@@ -70,6 +71,12 @@ namespace NurseTown.Core.Animation
             Instance = this;
 
             InitializeStateMap();
+
+            if (TTSEventPublisher.Instance != null)
+            {
+                TTSEventPublisher.Instance.OnSpeakStarted += HandleTTSSpeakStarted;
+                TTSEventPublisher.Instance.OnSpeakEnded += HandleTTSSpeakEnded;
+            }
         }
 
         /// <summary>
@@ -322,10 +329,80 @@ namespace NurseTown.Core.Animation
 
         void OnDestroy()
         {
+            if (TTSEventPublisher.Instance != null)
+            {
+                TTSEventPublisher.Instance.OnSpeakStarted -= HandleTTSSpeakStarted;
+                TTSEventPublisher.Instance.OnSpeakEnded -= HandleTTSSpeakEnded;
+            }
+
             if (Instance == this)
             {
                 Instance = null;
             }
+        }
+
+        private void HandleTTSSpeakStarted(TTSSpeakStartedEvent evt)
+        {
+            if (animationConfig == null) return;
+
+            string emotion = evt.Emotion?.ToLower() ?? "neutral";
+            string triggerName = null;
+            string stateName = null;
+
+            string[] talkingVariants = new string[]
+            {
+                $"talking_{emotion}",
+                $"speaking_{emotion}",
+                emotion
+            };
+
+            foreach (var variant in talkingVariants)
+            {
+                triggerName = animationConfig.GetTriggerByName(variant);
+                if (!string.IsNullOrEmpty(triggerName))
+                {
+                    stateName = $"Talking_{variant}";
+                    Debug.Log($"[AnimationStateMachine] Found talking animation for emotion '{emotion}': {variant} -> {triggerName}");
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(triggerName))
+            {
+                triggerName = animationConfig.GetTriggerByName("talking");
+                if (!string.IsNullOrEmpty(triggerName))
+                {
+                    stateName = "Talking_talking";
+                }
+            }
+
+            if (string.IsNullOrEmpty(triggerName))
+            {
+                triggerName = animationConfig.GetTriggerByName("neutral");
+                stateName = "Talking_neutral";
+            }
+
+            if (!string.IsNullOrEmpty(triggerName))
+            {
+                if (!_stateMap.ContainsKey(stateName))
+                {
+                    var talkingState = new AnimationStateConfig
+                    {
+                        stateName = stateName,
+                        stateType = AnimationStateType.Talking,
+                        animationTrigger = triggerName,
+                        canInterrupt = true
+                    };
+                    RegisterState(talkingState);
+                }
+
+                TransitionTo(stateName);
+            }
+        }
+
+        private void HandleTTSSpeakEnded(TTSSpeakEndedEvent evt)
+        {
+            PlayIdle();
         }
     }
 }

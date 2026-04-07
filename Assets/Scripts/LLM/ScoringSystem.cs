@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
 public class ScoringSystem
@@ -17,17 +16,19 @@ public class ScoringSystem
     private MonoBehaviour _owner;
     private string _pendingResponse;
     private bool _isEvaluating = false;
+    private string _mainSessionId;
 
     public void Initialize(ILlmClient llmClient, MonoBehaviour owner)
     {
         _llmClient = llmClient;
         _owner = owner;
+        _mainSessionId = llmClient?.SessionId;
     }
 
     public void Initialize(MonoBehaviour owner)
     {
         _owner = owner;
-        _llmClient = new LlmClient(LlmScene.Evaluation, "You are an expert nursing instructor. Evaluate nurse responses based on the provided criteria.", enableLogging: false);
+        _llmClient = new LlmClient(LlmScene.Evaluation, "You are an expert nursing instructor. Evaluate nurse responses based on the provided criteria.", enableLogging: true);
     }
 
     public void EvaluateNurseResponse(string nurseResponse)
@@ -67,7 +68,7 @@ public class ScoringSystem
         if (_llmClient == null)
         {
             Debug.LogError("[ScoringSystem] LLM Client is null. Creating a new one...");
-            _llmClient = new LlmClient(LlmScene.Evaluation, "You are an expert nursing instructor. Evaluate nurse responses based on the provided criteria.", enableLogging: false);
+            _llmClient = new LlmClient(LlmScene.Evaluation, "You are an expert nursing instructor. Evaluate nurse responses based on the provided criteria.", enableLogging: true);
         }
 
         Action<string> onResponse = null;
@@ -118,6 +119,11 @@ public class ScoringSystem
             }
 
             Debug.Log($"This was your {interactionCount} response.");
+            
+            if (_llmClient != null)
+            {
+                SessionAggregator.Instance.AddMessage(_llmClient.SessionId, "assistant", responseContent);
+            }
         }
         catch (Exception ex)
         {
@@ -143,6 +149,13 @@ public class ScoringSystem
         }
 
         Debug.Log("=============================");
+        
+        string report = $"Total Score: {totalScore}\n\nWell done:\n{string.Join("\n", pointsAddedReasons)}\n\nImprove:\n{string.Join("\n", pointsDeductedReasons)}";
+        
+        if (_llmClient != null)
+        {
+            SessionAggregator.Instance.SetScoringResult(_llmClient.SessionId, report);
+        }
 
         totalScore = 5;
         pointsAddedReasons.Clear();

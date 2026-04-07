@@ -139,50 +139,48 @@ public class ActTool : IDynamicTool
     /// </summary>
     private void TriggerRelatedEffects(string animationName)
     {
-        // 使用 EffectSystem 触发相关效果
-        if (EffectSystem.Instance != null)
+        AnimationConfig config = AnimationStateMachine.Instance?.Config
+            ?? _context?.AnimationConfig
+            ?? AnimationService.Instance?.CurrentConfig;
+
+        if (config == null)
         {
-            // 根据动画名称触发对应的效果
-            string effectId = GetEffectIdForAnimation(animationName);
-            if (!string.IsNullOrEmpty(effectId))
-            {
-                EffectSystem.Instance.TriggerEffect(effectId);
-                Debug.Log($"[ActTool] Triggered effect: {effectId} for animation: {animationName}");
-            }
+            Debug.LogWarning("[ActTool] No animation config available for effect triggering");
+            return;
         }
 
-        // 回退：使用旧的血液效果触发机制
-        if (AnimationStateMachine.Instance?.Config != null)
+        string effectId = config.GetEffectIdForAnimation(animationName);
+        float effectDelay = config.GetEffectDelayForAnimation(animationName);
+
+        if (!string.IsNullOrEmpty(effectId) && EffectSystem.Instance != null)
         {
-            string triggerName = AnimationStateMachine.Instance.Config.GetTriggerByName(animationName);
-            if (!string.IsNullOrEmpty(triggerName))
+            if (effectDelay > 0)
             {
-                var mapping = AnimationStateMachine.Instance.Config.GetMappingByTriggerName(triggerName);
-                if (mapping != null && mapping.triggerBloodEffect)
-                {
-                    // 尝试通过 ICharacterAnimation 接口触发血液效果
-                    _context?.AnimationController?.TriggerBloodEffect();
-                }
+                AnimationStateMachine.Instance.StartCoroutine(
+                    DelayedTriggerEffectCoroutine(effectId, effectDelay));
+            }
+            else
+            {
+                EffectSystem.Instance.TriggerEffect(effectId);
+            }
+            Debug.Log($"[ActTool] Triggered effect: {effectId} for animation: {animationName} (delay: {effectDelay}s)");
+        }
+
+        var triggerName = config.GetTriggerByName(animationName);
+        if (!string.IsNullOrEmpty(triggerName))
+        {
+            var mapping = config.GetMappingByTriggerName(triggerName);
+            if (mapping != null && mapping.triggerBloodEffect)
+            {
+                _context?.AnimationController?.TriggerBloodEffect();
             }
         }
     }
 
-    /// <summary>
-    /// 根据动画名称获取对应的效果ID
-    /// </summary>
-    private string GetEffectIdForAnimation(string animationName)
+    private static System.Collections.IEnumerator DelayedTriggerEffectCoroutine(string effectId, float delay)
     {
-        // 可以在这里添加动画到效果的映射逻辑
-        // 例如：pain 动画对应 blood_effect 效果
-        switch (animationName.ToLower())
-        {
-            case "pain":
-            case "writhing_pain":
-            case "blood_pressure":
-                return "blood_effect";
-            default:
-                return null;
-        }
+        yield return new WaitForSeconds(delay);
+        EffectSystem.Instance?.TriggerEffect(effectId);
     }
 
     private string[] GetAvailableAnimations()

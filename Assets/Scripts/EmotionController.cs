@@ -153,6 +153,26 @@ public class EmotionController : MonoBehaviour, ICharacterAnimation
         // EmotionController使用Timeline轨道而非Animator状态机
         // 此方法为接口兼容性保留空实现
     }
+    
+    /// <summary>
+    /// 根据动画名称播放动画（ICharacterAnimation接口实现）
+    /// </summary>
+    /// <param name="animationName">动画名称</param>
+    public void PlayByName(string animationName)
+    {
+        int code = MapAnimationNameToCode(animationName);
+        PlayByEmotionCode(code);
+    }
+    
+    /// <summary>
+    /// 触发血液效果（ICharacterAnimation接口实现）
+    /// EmotionController不使用血液效果，此方法为空实现
+    /// </summary>
+    public void TriggerBloodEffect()
+    {
+        // EmotionController使用Timeline系统，不使用血液效果
+        // 此方法为接口兼容性保留空实现
+    }
 
     /// <summary>
     /// 将动画名称映射到情绪代码

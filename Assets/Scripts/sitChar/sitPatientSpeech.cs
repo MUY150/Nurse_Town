@@ -6,9 +6,10 @@ using System.IO;
 using Newtonsoft.Json.Linq;
 using System.Text.RegularExpressions;
 using uLipSync;
+using NurseTown.Core.Interfaces;
 
 [Obsolete("Use PatientDialogueController instead. This class will be removed in v2.0. To migrate: Replace sitPatientSpeech component with PatientDialogueController and set scenarioName to 'hypertensionPatient'.")]
-public class sitPatientSpeech : MonoBehaviour
+public class sitPatientSpeech : MonoBehaviour, IConversationTarget
 {
     [Obsolete("Use PatientDialogueController.Instance instead")]
     public static sitPatientSpeech Instance;
@@ -166,15 +167,8 @@ public class sitPatientSpeech : MonoBehaviour
     private void OnLLMResponseReceived(string message)
     {
         transcript += $"Patient:\n{message}\n\n";
-
-        if (sitTTSManager.Instance != null)
-        {
-            sitTTSManager.Instance.ConvertTextToSpeech(message);
-        }
-        else
-        {
-            Debug.LogWarning("sitTTSManager not found – skipping TTS.");
-        }
+        
+        Debug.Log($"[sitPatientSpeech] LLM Response: {message}");
     }
 
     public void ReceiveNurseTranscription(string transcribedText)
@@ -217,5 +211,33 @@ public class sitPatientSpeech : MonoBehaviour
         }
 
         Debug.Log($"[{role.ToUpper()}]{emotionCode}\n{content}\n");
+    }
+
+    // IConversationTarget 接口实现
+    public PatientProfile GetProfile()
+    {
+        // 创建一个基本的 PatientProfile，使用硬编码的场景名称
+        var profile = new PatientProfile
+        {
+            scenarioName = "hypertensionPatient",
+            patientName = "Mrs. Johnson"
+        };
+        return profile;
+    }
+
+    public ILlmClient GetLlmClient()
+    {
+        return _llmClient;
+    }
+
+    public ICharacterAnimation GetAnimationController()
+    {
+        if (animationController != null)
+        {
+            return animationController;
+        }
+        // 尝试获取动画控制器
+        animationController = GetComponent<CharacterAnimationController>();
+        return animationController;
     }
 }

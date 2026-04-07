@@ -93,7 +93,7 @@ namespace NurseTown.Core.Effects
             // 查找血压文本
             if (bloodPressureText == null)
             {
-                var bpObj = GameObject.Find("BloodPressureVal");
+                var bpObj = GameObject.Find("bloodPresureVal");
                 if (bpObj != null)
                 {
                     bloodPressureText = bpObj.GetComponent<TextMeshProUGUI>();

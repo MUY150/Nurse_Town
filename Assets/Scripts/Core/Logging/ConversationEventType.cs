@@ -5,5 +5,6 @@ public enum ConversationEventType
     SessionStart,
     MessageSent,
     MessageReceived,
-    SessionEnd
+    SessionEnd,
+    ToolCall
 }
